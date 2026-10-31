@@ -57,6 +57,10 @@
 - 남은 일: 배포 URL에서 예시 데이터 렌더·키 동기화 확인. OKX 개인 API의 브라우저 CORS 허용 여부 미확인(막히면 동기화는 export.js로 대체). 11단계(노션)는 선택
 - 주의: 저장소가 public이므로 커밋에 키·data 금지(.gitignore로 차단됨, 이력 스캔 시 키 패턴 없음)
 
+## 예시 데이터 확장 (2026-10-31)
+- 한 일: scripts/make-demo.js(고정 시드 합성) → demo/{order,fills,bills}.csv·extra.json. FUTURES 40건·SPOT 4건·열린 포지션 2·BTC 보유. 원장·주문 대사 불일치 0. loadSample은 demo/ 사용(tests/fixtures는 테스트 전용 유지)
+- 주의: 선물 Bill은 CSV E(아카이브) 형식+docs/subtypes.json으로 분류. CSV Fill에 side가 없어 현물 체결·Position·balance는 extra.json에 정규화 레코드로 넣음. .gitignore에 !demo/*.csv
+
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
 ## N단계 (YYYY-MM-DD)

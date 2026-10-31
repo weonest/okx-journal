@@ -30,9 +30,11 @@ async function loadSubtypes() {
 }
 
 export async function loadSample() {
-  const names = ['order.csv', 'fills.csv', 'bills.csv', 'pos.csv', 'archive.csv'];
-  const list = await Promise.all(names.map(async (name) => ({ name, text: await (await fetch('tests/fixtures/' + name)).text() })));
+  const names = ['order.csv', 'fills.csv', 'bills.csv'];
+  const list = await Promise.all(names.map(async (name) => ({ name, text: await (await fetch('demo/' + name)).text() })));
   const { raw, info } = ingestCsv(list, { subtypes: await loadSubtypes() });
+  const extra = await (await fetch('demo/extra.json')).json(); // 현물 체결(side 포함)·열린 포지션·잔고: 합성
+  raw.Fill.push(...extra.Fill); raw.Position.push(...extra.Position); raw.balance.push(...extra.balance);
   S.api = null; S.csv = raw; S.csvInfo = info; S.sample = true; recompute();
 }
 

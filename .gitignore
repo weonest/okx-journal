@@ -3,3 +3,4 @@ data/
 *.csv
 !tests/fixtures/*.csv
 .DS_Store
+!demo/*.csv
