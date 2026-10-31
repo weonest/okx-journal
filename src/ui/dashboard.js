@@ -50,12 +50,12 @@ export function dashboardView(rerender) {
 
 function drawCharts(lineEl, barEl, eq) {
   if (!eq.length || !lineEl.isConnected) return;
-  const opt = (el) => ({ width: el.clientWidth, height: 220, layout: { background: { color: '#171b22' }, textColor: '#8b94a3' }, grid: { vertLines: { color: '#262c36' }, horzLines: { color: '#262c36' } }, timeScale: { borderColor: '#262c36' }, rightPriceScale: { borderColor: '#262c36' } });
+  const opt = (el) => ({ width: el.clientWidth, height: 220, layout: { background: { color: '#141a18' }, textColor: '#8a9894' }, grid: { vertLines: { color: '#263230' }, horzLines: { color: '#263230' } }, timeScale: { borderColor: '#263230' }, rightPriceScale: { borderColor: '#263230' } });
   const a = createChart(lineEl, opt(lineEl));
-  a.addLineSeries({ color: '#4c8dff', lineWidth: 2 }).setData(eq.map((e) => ({ time: e.day, value: e.cum })));
+  a.addLineSeries({ color: '#3ecf8e', lineWidth: 2 }).setData(eq.map((e) => ({ time: e.day, value: e.cum })));
   a.timeScale().fitContent();
   const b = createChart(barEl, opt(barEl));
-  b.addHistogramSeries({}).setData(eq.map((e) => ({ time: e.day, value: e.net, color: e.net >= 0 ? '#2ebd85' : '#f6465d' })));
+  b.addHistogramSeries({}).setData(eq.map((e) => ({ time: e.day, value: e.net, color: e.net >= 0 ? '#3ecf8e' : '#f0616d' })));
   b.timeScale().fitContent();
   window.addEventListener('resize', () => { a.applyOptions({ width: lineEl.clientWidth }); b.applyOptions({ width: barEl.clientWidth }); });
 }

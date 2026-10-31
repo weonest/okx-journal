@@ -20,7 +20,7 @@ export function tradesView(rerender) {
   const th = (label, key) => h('button', { class: 'sub', onclick: () => { ui.dir = ui.sort === key ? -ui.dir : -1; ui.sort = key; rerender(); } }, label + (ui.sort === key ? (ui.dir < 0 ? ' ▼' : ' ▲') : ''));
   const rows = list.map((t) => [
     h('td', {}, h('a', { href: '#/trades', onclick: (e) => { e.preventDefault(); ui.sel = t.id; rerender(); } }, t.instId)),
-    t.instType, t.side, fmtTs(t.openTs), fmtTs(t.closeTs), t.closeTs != null ? fmtDur(t.closeTs - t.openTs) : '-',
+    h('td', {}, h('span', { class: 'tag sym' }, t.instType)), h('td', {}, h('span', { class: 'tag ' + t.side }, t.side.toUpperCase())), fmtTs(t.openTs), fmtTs(t.closeTs), t.closeTs != null ? fmtDur(t.closeTs - t.openTs) : '-',
     td(t.ccy ? fmtNum(t.net) + ' ' + t.ccy : '통화 여럿', cls(t.net)), t.status,
   ]);
   return h('div', {},
@@ -63,13 +63,13 @@ async function drawCandles(el, msg, t, fills, bills) {
     if (!cs.length) { msg.textContent = '-: 해당 구간 캔들 없음'; return; }
     msg.textContent = `봉 ${bar} · ${cs.length}개`;
     if (!el.isConnected) return;
-    const ch = createChart(el, { width: el.clientWidth, height: 220, layout: { background: { color: '#171b22' }, textColor: '#8b94a3' }, grid: { vertLines: { color: '#262c36' }, horzLines: { color: '#262c36' } }, timeScale: { timeVisible: true } });
+    const ch = createChart(el, { width: el.clientWidth, height: 220, layout: { background: { color: '#141a18' }, textColor: '#8a9894' }, grid: { vertLines: { color: '#263230' }, horzLines: { color: '#263230' } }, timeScale: { timeVisible: true } });
     const s = ch.addCandlestickSeries();
     s.setData(cs);
     const snap = (ts) => { const sec = ts / 1000; let b = cs[0].time; for (const c of cs) if (c.time <= sec) b = c.time; return b; };
     const mk = [];
     const evs = fills.length ? fills.map((f) => ({ ts: f.ts, buy: f.side === 'buy' })) : [{ ts: t.openTs, buy: t.side === 'long' }, ...(t.closeTs ? [{ ts: t.closeTs, buy: t.side !== 'long' }] : [])];
-    for (const e of evs) mk.push({ time: snap(e.ts), position: e.buy ? 'belowBar' : 'aboveBar', shape: e.buy ? 'arrowUp' : 'arrowDown', color: e.buy ? '#2ebd85' : '#f6465d', text: e.buy ? '매수' : '매도' });
+    for (const e of evs) mk.push({ time: snap(e.ts), position: e.buy ? 'belowBar' : 'aboveBar', shape: e.buy ? 'arrowUp' : 'arrowDown', color: e.buy ? '#3ecf8e' : '#f0616d', text: e.buy ? '매수' : '매도' });
     s.setMarkers(mk.sort((a, b) => a.time - b.time));
     ch.timeScale().fitContent();
   } catch (e) { msg.textContent = '-: 캔들을 불러오지 못했습니다 (' + e.message + ')'; }

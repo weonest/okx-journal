@@ -13,7 +13,7 @@ export function positionsView() {
     const ok = p.markPx != null && p.avgPx != null && p.ctVal != null;
     const expo = ok ? size * p.ctVal * (p.ctMult ?? 1) * p.markPx : null;
     const upl = ok ? sgn * (p.markPx - p.avgPx) * size * p.ctVal * (p.ctMult ?? 1) : null;
-    return [p.instId, p.mgnMode, p.posSide, fmtNum(size, 6), fmtNum(p.avgPx, 6), fmtNum(p.markPx, 6), fmtNum(expo), td(upl == null ? '-' : fmtNum(upl) + ' (추정)', cls(upl)), p.lever ?? '-', p.margin == null ? '-' : fmtNum(p.margin) + ' ' + p.ccy, fmtTs(p.snapshotTs)];
+    return [p.instId, p.mgnMode, h('td', {}, h('span', { class: 'tag ' + (sgn < 0 ? 'short' : 'long') }, sgn < 0 ? 'SHORT' : 'LONG')), fmtNum(size, 6), fmtNum(p.avgPx, 6), fmtNum(p.markPx, 6), fmtNum(expo), td(upl == null ? '-' : fmtNum(upl) + ' (추정)', cls(upl)), p.lever ?? '-', p.margin == null ? '-' : fmtNum(p.margin) + ' ' + p.ccy, fmtTs(p.snapshotTs)];
   });
   const holds = r.spot.holdings.filter((x) => x.qty > 1e-9);
   return h('div', {},
