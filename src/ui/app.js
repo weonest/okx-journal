@@ -1,5 +1,5 @@
 import { h, icon } from './dom.js';
-import { S, subscribe, addCsv, loadSample } from './store.js';
+import { S, subscribe, addCsv, loadSample, restore } from './store.js';
 import { settingsView } from './settings.js';
 import { dataView } from './data.js';
 import { dashboardView, calendarView } from './dashboard.js';
@@ -34,6 +34,7 @@ function render() {
 addEventListener('hashchange', render);
 subscribe(render);
 render();
+restore(); // 저장된 데이터가 있으면 복원(복원되면 subscribe로 다시 그려진다)
 
 // 헤더 오른쪽: 동기화(설정) · CSV 업로드 · 예시 데이터 · 사용자 메뉴(나머지 화면)
 const pick = h('input', { type: 'file', accept: '.csv,text/csv', multiple: true, hidden: true });

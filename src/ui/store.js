@@ -16,6 +16,7 @@ export function recompute() {
     relink();
   } catch (e) { S.result = null; S.error = e.message; }
   subs.forEach((f) => f());
+  persist();
 }
 
 function relink() {
@@ -52,7 +53,7 @@ export async function loadSample() {
   S.api = null; S.csv = raw; S.csvInfo = info; S.sample = true; recompute();
 }
 
-export function clearData() { S.journal = null; S.api = null; S.csv = emptyRaw(); S.csvInfo = []; S.sample = false; recompute(); }
+export function clearData() { idbDel(); S.journal = null; S.api = null; S.csv = emptyRaw(); S.csvInfo = []; S.sample = false; recompute(); }
 
 // --- 저장소 (키 값은 어디에도 출력하지 않는다) ---
 const safe = (f) => { try { return f(); } catch { return null; } };
@@ -65,3 +66,29 @@ export function saveKeys(k, remember) {
 }
 export function clearKeys() { safe(() => { sessionStorage.removeItem('okx.keys'); localStorage.removeItem('okx.keys'); }); }
 S.lastSync = Number(load('lastSync')) || null;
+
+// --- 이 기기에 기억: 켠 때만 불러온 데이터를 IndexedDB에 저장하고 새로고침 때 복원한다(예시 데이터는 저장하지 않는다) ---
+const FLAG = 'okx.remember';
+export const isRemembering = () => safe(() => localStorage.getItem(FLAG) === '1') === true;
+export function setRemember(on) {
+  safe(() => (on ? localStorage.setItem(FLAG, '1') : localStorage.removeItem(FLAG)));
+  if (on) persist(); else idbDel();
+}
+const idb = () => new Promise((res, rej) => { const r = indexedDB.open('okx-journal', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
+const tx = async (mode, f) => { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction('kv', mode); const out = f(t.objectStore('kv')); t.oncomplete = () => res(out.result); t.onerror = () => rej(t.error); }); };
+function idbDel() { tx('readwrite', (st) => st.delete('data')).catch(() => {}); }
+function persist() {
+  if (!isRemembering() || S.sample) return;
+  const snap = { api: S.api, csv: S.csv, csvInfo: S.csvInfo, journal: S.journal, lastSync: S.lastSync };
+  tx('readwrite', (st) => st.put(snap, 'data')).catch(() => {});
+}
+/** 시작할 때 한 번: 저장된 데이터가 있으면 복원한다. */
+export async function restore() {
+  if (!isRemembering()) return;
+  try {
+    const d = await tx('readonly', (st) => st.get('data'));
+    if (!d) return;
+    S.api = d.api ?? null; S.csv = d.csv ?? emptyRaw(); S.csvInfo = d.csvInfo ?? []; S.journal = d.journal ?? null; S.lastSync = d.lastSync ?? S.lastSync;
+    recompute();
+  } catch { /* IndexedDB 사용 불가: 건너뜀 */ }
+}

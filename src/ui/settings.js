@@ -1,5 +1,5 @@
 import { h, fmtTs } from './dom.js';
-import { S, setApi, addCsv, clearData, loadKeys, saveKeys, clearKeys, load } from './store.js';
+import { S, setApi, addCsv, clearData, setRemember, isRemembering, loadKeys, saveKeys, clearKeys, load } from './store.js';
 import { createClient } from '../core/okx/client.js';
 import { syncAll } from '../core/okx/sync.js';
 import { applyArchive, getArchive } from '../core/okx/archive.js';
@@ -7,7 +7,12 @@ import { applyArchive, getArchive } from '../core/okx/archive.js';
 export function settingsView() {
   const saved = loadKeys() ?? {};
   const inp = (id, label, v, type = 'text') => [h('label', { for: id }, label), h('input', { id, type, value: v ?? '', autocomplete: 'off' })];
-  const remember = h('input', { type: 'checkbox', id: 'rem', checked: load('keys') && localStorage.getItem('okx.keys') ? true : null });
+  const remember = h('input', { type: 'checkbox', id: 'rem', checked: isRemembering() || (load('keys') && localStorage.getItem('okx.keys')) ? true : null });
+  remember.onchange = () => { // 켜자마자 저장(동기화를 누르지 않아도), 끄면 저장분 삭제
+    setRemember(remember.checked);
+    const k = { key: val('k'), secret: val('s'), passphrase: val('p') };
+    if (k.key && k.secret && k.passphrase) saveKeys(k, remember.checked);
+  };
   const log = h('div', { class: 'log' });
   const say = (s) => { log.textContent += s + '\n'; log.scrollTop = log.scrollHeight; };
   const val = (id) => document.getElementById(id).value.trim();
@@ -58,7 +63,7 @@ export function settingsView() {
   return h('div', {},
     h('section', {}, h('h2', {}, 'API 키 (Read 전용)'),
       inp('k', 'API Key', saved.key, 'password'), inp('s', 'Secret', saved.secret, 'password'), inp('p', 'Passphrase', saved.passphrase, 'password'),
-      h('div', { class: 'row' }, remember, h('label', { for: 'rem', style: 'margin:0' }, '이 기기에 기억 (끄면 이 탭에서만 유지)'),
+      h('div', { class: 'row' }, remember, h('label', { for: 'rem', style: 'margin:0' }, '이 기기에 기억 (키와 불러온 데이터를 이 브라우저에 저장 · 끄면 이 탭에서만 유지)'),
         h('button', { class: 'sub', onclick: () => { clearKeys(); location.reload(); } }, '키 지우기')),
       h('div', { class: 'row' }, syncBtn, h('span', { class: 'mute' }, '마지막 동기화: ' + fmtTs(S.lastSync) + ' (KST)')),
       log),
