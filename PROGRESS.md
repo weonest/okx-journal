@@ -1,6 +1,6 @@
 # 진행 기록
 
-현재 단계: 3
+현재 단계: 4
 
 ## 0단계 (2026-10-31)
 - 한 일: package.json, .gitignore, vendor 차트 라이브러리, git init, private 저장소 weonest/okx-journal push
@@ -21,6 +21,11 @@
 - 한 일: client.post, okx/archive.js(apply/get/wait), fromCsv E에 subtypes→type·SWAP→FUTURES, export.js --archive=2025Q3, tests/archive.test.js(전체 22개 통과)
 - 남은 일: 사용자는 거래 이력이 전혀 없어 아카이브 실파일이 없음. 거래가 생기고 3개월이 지나면 `--archive=<분기>`로 받아 헤더를 DATA.md에 기록. 호출 시 `docs/subtypes.json`을 opts.subtypes로 넘길 것
 - 주의: 신청은 하루 12회 제한(스크립트는 1회만 신청). 다운로드 응답 형식(zip 여부)은 실제 실행으로 확인 필요
+
+## 4단계 (2026-10-31) — 완료(실데이터 검증은 거래 발생 후로 이월)
+- 한 일: eventTypes.js(classify/positionKey), ledger.js(buildLedger: 잔량·효과·잔고 대사), positions.js(buildPositions: 라운드트립·이자 귀속·history/Position 대조), 테스트 3개(전체 통과)
+- 남은 일: 포지션 모드, posBal 의미, 실제 subType, INTEREST·FUNDING 금액이 balChg인지 실데이터 확인. liqPenalty·settledPnl은 realizedPnl 비교에 미반영(차이로 표시됨)
+- 주의: posBal은 쓰지 않음. 열린 기록 없는 청산은 orphans, 금액은 amounts[ccy]로 통화별 보관(통화 여럿이면 평면 합계 null)
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
