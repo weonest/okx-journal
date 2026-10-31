@@ -91,7 +91,7 @@ export function tradesView(rerender) {
   for (let i = rows.length; i < 8; i++) rows.push(h('tr', { class: 'empty' }, h('td', { class: 'c0' }), cols.map(() => h('td', {}))));
 
   return h('div', {},
-    detail(t, r),
+    detail(t),
     h('section', { class: 'nt' },
       h('div', { class: 'between nt-bar' }, h('div', { class: 'sbox' }, icon('search', 16), search),
         h('div', { class: 'row' }, tbtn('cols', 'sliders', '속성'), tbtn('filter', null, '필터'), tbtn('sort', null, '정렬'))),
@@ -100,15 +100,6 @@ export function tradesView(rerender) {
       h('div', { class: 'mute foot' }, `${list.length}건 · 행을 누르면 위 차트와 일지가 바뀝니다. 평균 진입·청산가는 선물·마진만(현물은 -).`)));
 }
 
-function detail(t, r) {
-  const bills = t.billIds?.length ? r.data.Bill.filter((b) => t.billIds.includes(b.billId)) : [];
-  const fillIds = new Set(t.fillIds ?? bills.map((b) => b.tradeId).filter(Boolean));
-  const fills = r.data.Fill.filter((f) => f.instId === t.instId && fillIds.has(f.tradeId));
-  const ev = [
-    ...bills.map((b) => ({ ts: b.ts, kind: `Bill ${b.type ?? ''}/${b.subType ?? ''}`, px: b.px, sz: b.sz, pnl: b.pnl, fee: b.fee, ccy: b.ccy })),
-    ...(t.fillIds ? fills.map((f) => ({ ts: f.ts, kind: `Fill ${f.side}`, px: f.fillPx, sz: f.fillSz, pnl: null, fee: f.fee, ccy: f.feeCcy })) : []),
-  ].sort((a, b) => a.ts - b.ts);
-  return h('div', {},
-    journalForTrade(t.id) ?? h('section', {}, h('h2', {}, '매매일지'), h('div', { class: 'mute' }, S.journal ? '-: 이 거래에 연결된 일지 없음' : '-: 일지를 불러오지 않았습니다(#/journal에서 노션 내보내기 파일 업로드)')),
-    h('details', { class: 'panel' }, h('summary', {}, '이벤트 타임라인'), ev.length ? table(['시각(KST)', '구분', '가격', '수량', '손익', '수수료', '통화'], ev.map((e) => [fmtTs(e.ts), e.kind, fmtNum(e.px, 6), fmtNum(e.sz, 6), fmtNum(e.pnl, 4), fmtNum(e.fee, 4), e.ccy ?? '-'])) : h('div', { class: 'mute' }, '-: 연결된 이벤트 없음')));
+function detail(t) {
+  return journalForTrade(t.id) ?? h('section', {}, h('h2', {}, '매매일지'), h('div', { class: 'mute' }, S.journal ? '-: 이 거래에 연결된 일지 없음' : '-: 일지를 불러오지 않았습니다(#/journal에서 노션 내보내기 파일 업로드)'));
 }
