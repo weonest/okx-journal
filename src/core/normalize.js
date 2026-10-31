@@ -68,18 +68,31 @@ function splitSide(raw) {
  * C·D는 UTC+8 고정, E는 UTC ms.
  * @param {'A'|'B'|'C'|'D'|'E'} kind
  * @param {Record<string,string>[]} rows
- * @param {{meta?:string[]|null, tzOffsetHours?:number|null}} [opts]
+ * @param {{meta?:string[]|null, tzOffsetHours?:number|null, subtypes?:object[]}} [opts]
  * @returns {{records:object[], duplicates:number, tsMissing:number}}
  */
+/** /account/subtypes 응답([{type, subTypeDetails:[{subType}]}]) → Map(subType → type) */
+export function subtypeMap(list) {
+  const m = new Map();
+  for (const t of Array.isArray(list) ? list : [])
+    for (const d of t.subTypeDetails ?? []) m.set(String(d.subType), String(t.type));
+  return m;
+}
+
 export function fromCsv(kind, rows, opts = {}) {
   const tz = opts.tzOffsetHours ?? tzFromMeta(opts.meta);
   const map = MAPPERS[kind];
   if (!map) throw new Error(`알 수 없는 종류: ${kind}`);
+  const typeBySub = kind === 'E' ? subtypeMap(opts.subtypes) : null;
   const seen = new Set();
   const records = [];
   let duplicates = 0, tsMissing = 0;
   for (const r of rows) {
     const rec = map.fn(r, tz);
+    if (typeBySub) {
+      rec.type = rec.type ?? typeBySub.get(rec.subType) ?? null;
+      rec.instType = instTypeOf(rec.instType); // SWAP → FUTURES
+    }
     const key = rec[map.key];
     if (key === '' || key === null) continue; // 기본키 없는 행(합계 등)은 버린다
     if (seen.has(key)) { duplicates++; continue; }

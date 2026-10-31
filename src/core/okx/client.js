@@ -58,6 +58,27 @@ export function createClient(o) {
     }
   }
 
+  /** 서명된 POST(JSON). 재시도 없음: 아카이브 신청은 하루 12회 제한이라 자동 반복하지 않는다. */
+  async function post(path, body) {
+    const text = JSON.stringify(body);
+    const ts = isoTs(now() + skew);
+    const res = await f(base + path, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'OK-ACCESS-KEY': key,
+        'OK-ACCESS-SIGN': await sign(secret, ts, 'POST', path, text),
+        'OK-ACCESS-TIMESTAMP': ts,
+        'OK-ACCESS-PASSPHRASE': passphrase,
+      },
+      body: text,
+    });
+    let j = null;
+    try { j = await res.json(); } catch { /* 본문 없음 */ }
+    if (!res.ok || !j || j.code !== '0') throw new Error(`OKX 오류 ${path}: code=${j?.code ?? res.status} msg=${j?.msg ?? ''}`);
+    return j.data;
+  }
+
   /**
    * 커서 페이지네이션. 최신순 결과의 마지막 항목 cursorField를 다음 after로 넣는다.
    * 빈 배열이거나 limit보다 적게 오면 끝. maxPages로 폭주 방지.
@@ -79,5 +100,5 @@ export function createClient(o) {
     return out;
   }
 
-  return { syncTime, get, paginate, get skew() { return skew; } };
+  return { syncTime, get, post, paginate, get skew() { return skew; } };
 }
