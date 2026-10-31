@@ -22,6 +22,7 @@ const ev = [], orders = [], fills = [];
 function addOrder(o) { orders.push(o); }
 function px(base, t) { return base * (1 + 0.08 * Math.sin(t / 3e8) + 0.03 * Math.sin(t / 7e7)); }
 
+const journal = [];
 const open = []; // 마지막에 열어 둘 포지션
 for (const [id, c] of Object.entries(INST)) {
   let t = START + between(0, 6) * 3600e3;
@@ -50,6 +51,13 @@ for (const [id, c] of Object.entries(INST)) {
     };
     const openAct = dir === 'long' ? 'Open long' : 'Open short', closeAct = dir === 'long' ? 'Close long' : 'Close short';
     mk(t, openAct, sz, entry, 0);
+    if (rnd() < 0.55) {
+      const st = [pick(['돌파', '눌림목', '역추세', '추세추종'])]; if (rnd() < 0.25) st.push('거래량 급증');
+      const mi = !win && rnd() < 0.7 ? [pick(['추격 진입', '손절 지연', '과대 포지션'])] : [];
+      journal.push({ pageId: `demo-${journal.length + 1}`, url: null, title: `${id.split('-')[0]} ${dir === 'long' ? '롱' : '숏'} 복기`, date: new Date(Math.round(t / 1000) * 1000).toISOString(), dateEnd: null,
+        instId: id.split('-')[0], side: dir === 'long' ? 'LONG' : 'SHORT', strategies: st, mistakes: mi, grade: win ? pick(['A', 'A', 'B']) : pick(['B', 'C', 'C']), linkId: null,
+        body: [`# 진입 근거`, `- ${st[0]} 패턴 확인 후 진입 (레버 ${lever}배)`, win ? '계획대로 청산함.' : mi.length ? `복기: ${mi[0]}이(가) 문제였다.` : '손절 규칙은 지켰다.'] });
+    }
     if (i === n - 1 && id !== 'SOL-USDT-SWAP') { open.push({ id, dir, sz, entry, lever, c }); continue; } // 열어 둠
     const pnlOf = (n2, p) => r((p - entry) * n2 * c.ct * (dir === 'long' ? 1 : -1), 4);
     if (sz >= 20 && rnd() < 0.4) {
@@ -115,5 +123,6 @@ fs.writeFileSync('demo/order.csv', meta + csv(['Order ID', 'Order Time', 'Instru
 fs.writeFileSync('demo/fills.csv', meta + csv(['Trade ID', 'Order ID', 'Trade Time', 'Instrument', 'Symbol', 'Filled Amount', 'Filled Amount Unit', 'Filled Price', 'Fill Price Unit', 'Trading Volume', 'Trading Volume Unit', 'taker/maker', 'Fee', 'Fee Unit'],
   fills.map((f) => [f.trId, f.ordId, fmt(f.ts), f.inst, f.sym, f.sz, 'Cont', f.px, 'USDT', f.notional, 'USDT', f.role, f.fee, 'USDT'])));
 fs.writeFileSync('demo/bills.csv', 'instType,billId,subType,ts,balChg,posBalChg,bal,posBal,sz,px,ccy,pnl,fee,mgnMode,instId,ordId,execType,interest\n' + bills.map((x) => ['SWAP', x[0], x[1], x[2], x[3], x[4], x[5], x[6], x[7], x[8], x[9], x[10], x[11], x[12], x[13], x[14], x[15], ''].join(',')).join('\n') + '\n');
+fs.writeFileSync('demo/journal.json', JSON.stringify({ exportedAt: now, entries: journal }, null, 1)); // 합성 일지(노션 내보내기 형식)
 fs.writeFileSync('demo/extra.json', JSON.stringify({ Fill: spotFills, Position: positions, balance }, null, 1));
 console.log(`orders ${orders.length} fills ${fills.length} bills ${bills.length} spotFills ${spotFills.length} openPositions ${positions.length}`);

@@ -1,8 +1,9 @@
 // 화면 상태. 키는 기본 sessionStorage, "이 기기에 기억"을 켠 때만 localStorage.
+import { linkJournal, journalStats } from '../core/notion.js';
 import { emptyRaw, concatRaw, analyze, ingestCsv, fromApi } from '../core/pipeline.js';
 
 export const S = {
-  api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, lastSync: null, error: null,
+  api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, journal: null, linked: null, jstats: null, lastSync: null, error: null,
   usdRate: null, // 환산 기준 주입 자리(8단계에서는 없음 → USD 합계 '-')
 };
 const subs = new Set();
@@ -12,8 +13,20 @@ export function recompute() {
   try {
     S.result = analyze(concatRaw(S.api ?? emptyRaw(), S.csv), { usdRate: S.usdRate ?? undefined });
     S.error = null;
+    relink();
   } catch (e) { S.result = null; S.error = e.message; }
   subs.forEach((f) => f());
+}
+
+function relink() {
+  if (!S.journal || !S.result) { S.linked = null; S.jstats = null; return; }
+  S.linked = linkJournal(S.journal.entries, S.result.trades);
+  S.jstats = journalStats(S.linked.byTrade, S.result.trades);
+}
+export async function addJournal(file) {
+  const j = JSON.parse(await file.text());
+  if (!Array.isArray(j.entries)) throw new Error('notion-export.js가 만든 JSON이 아닙니다(entries 없음)');
+  S.journal = j; recompute();
 }
 
 export function setApi(out) { S.api = fromApi(out); S.lastSync = Date.now(); S.sample = false; save('lastSync', String(S.lastSync), true); recompute(); }
@@ -35,10 +48,11 @@ export async function loadSample() {
   const { raw, info } = ingestCsv(list, { subtypes: await loadSubtypes() });
   const extra = await (await fetch('demo/extra.json')).json(); // 현물 체결(side 포함)·열린 포지션·잔고: 합성
   raw.Fill.push(...extra.Fill); raw.Position.push(...extra.Position); raw.balance.push(...extra.balance);
+  S.journal = await (await fetch('demo/journal.json')).json();
   S.api = null; S.csv = raw; S.csvInfo = info; S.sample = true; recompute();
 }
 
-export function clearData() { S.api = null; S.csv = emptyRaw(); S.csvInfo = []; S.sample = false; recompute(); }
+export function clearData() { S.journal = null; S.api = null; S.csv = emptyRaw(); S.csvInfo = []; S.sample = false; recompute(); }
 
 // --- 저장소 (키 값은 어디에도 출력하지 않는다) ---
 const safe = (f) => { try { return f(); } catch { return null; } };

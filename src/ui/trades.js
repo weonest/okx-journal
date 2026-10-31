@@ -1,6 +1,7 @@
 import { createChart } from '../../vendor/lightweight-charts.mjs';
 import { h, table, td, fmtNum, fmtTs, fmtDur, cls } from './dom.js';
 import { S } from './store.js';
+import { journalForTrade } from './journal.js';
 
 const ui = { type: 'ALL', inst: 'ALL', side: 'ALL', sort: 'closeTs', dir: -1, sel: null, bar: 'auto' };
 
@@ -46,6 +47,7 @@ function detail(t, r, rerender) {
     h('section', {}, h('div', {}, `진입 ${fmtTs(t.openTs)} → 청산 ${fmtTs(t.closeTs)} (KST) · 최대 수량 ${fmtNum(t.maxSize, 6)}${t.closeReason && t.closeReason !== 'TRADE' ? ' · ' + t.closeReason : ''}`), h('ul', {}, amt.map((a) => h('li', {}, a)))),
     h('section', {}, h('h2', {}, '캔들 (공개 API market/history-candles)'),
       h('div', { class: 'row' }, BAR_BTN.map(([b, label]) => h('button', { class: b === ui.bar ? null : 'sub', onclick: () => { ui.bar = b; rerender(); } }, label))), msg, chartEl),
+    journalForTrade(t.id),
     h('section', {}, h('h2', {}, '이벤트 타임라인'), ev.length ? table(['시각(KST)', '구분', '가격', '수량', '손익', '수수료', '통화'], ev.map((e) => [fmtTs(e.ts), e.kind, fmtNum(e.px, 6), fmtNum(e.sz, 6), fmtNum(e.pnl, 4), fmtNum(e.fee, 4), e.ccy ?? '-'])) : h('div', { class: 'mute' }, '-: 연결된 이벤트 없음')));
 }
 

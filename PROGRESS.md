@@ -1,6 +1,6 @@
 # 진행 기록
 
-현재 단계: 10
+현재 단계: 11
 
 ## 0단계 (2026-10-31)
 - 한 일: package.json, .gitignore, vendor 차트 라이브러리, git init, private 저장소 weonest/okx-journal push
@@ -60,6 +60,11 @@
 ## 예시 데이터 확장 (2026-10-31)
 - 한 일: scripts/make-demo.js(고정 시드 합성) → demo/{order,fills,bills}.csv·extra.json. FUTURES 40건·SPOT 4건·열린 포지션 2·BTC 보유. 원장·주문 대사 불일치 0. loadSample은 demo/ 사용(tests/fixtures는 테스트 전용 유지)
 - 주의: 선물 Bill은 CSV E(아카이브) 형식+docs/subtypes.json으로 분류. CSV Fill에 side가 없어 현물 체결·Position·balance는 extra.json에 정규화 레코드로 넣음. .gitignore에 !demo/*.csv
+
+## 11단계 (2026-10-31) — 코드 완료, 실제 노션 DB 확인 대기
+- 한 일: core/notion.js(속성 파싱·일지↔거래 연결·전략/실수/등급 집계, tests/notion.test.js), scripts/notion-export.js(DB 조회+본문→data/notion-journal.json), ui/journal.js(#/journal 업로드·집계·목록, 거래 상세에 일지 표시), 예시 일지 demo/journal.json
+- 남은 일: 사용자가 노션에 개인 DB(속성: 날짜·종목·방향·전략·실수·등급·연결ID)와 읽기 전용 통합을 만들고 .env.local에 NOTION_TOKEN·NOTION_DB를 넣은 뒤 `node --env-file=.env.local scripts/notion-export.js` 실행 → 파일을 #/journal에 업로드. 실제 속성 타입(종목이 select인지 text인지 등)은 확인 필요
+- 주의: 계획과 달리 브라우저 직접 호출이 아니라 내보내기 스크립트(노션 API CORS). Notion-Version 2022-06-28 고정(2025-09-03부터 DB query는 deprecated, data source query로 이동 — 문서에서 엔드포인트 경로는 확인 못 함). 집계는 metrics.js가 아니라 notion.js에 둠. 시각 있는 일지는 ±5분 허용 연결
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--

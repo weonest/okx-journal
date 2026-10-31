@@ -5,12 +5,13 @@ import { dataView } from './data.js';
 import { dashboardView } from './dashboard.js';
 import { tradesView } from './trades.js';
 import { ordersView } from './orders.js';
+import { journalView } from './journal.js';
 import { positionsView } from './positions.js';
 
 const stub = (n) => () => h('section', {}, `${n}단계에서 구현합니다.`);
 const ROUTES = {
   dashboard: ['대시보드', dashboardView], trades: ['거래', tradesView], orders: ['주문', ordersView], positions: ['포지션', positionsView],
-  journal: ['일지', stub(11)], data: ['데이터 점검', dataView], settings: ['설정', settingsView],
+  journal: ['일지', journalView], data: ['데이터 점검', dataView], settings: ['설정', settingsView],
 };
 const view = document.getElementById('view');
 const nav = document.getElementById('nav');
