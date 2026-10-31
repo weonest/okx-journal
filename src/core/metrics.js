@@ -154,3 +154,26 @@ export function buildMetrics(trades, opts = {}) {
     perDay: freq,
   };
 }
+
+/**
+ * 일별 순손익 시리즈([{day:'YYYY-MM-DD', net}])를 최근 N일로 자르고 기간 합계·수익일/손실일·누적 이익/손실을 낸다.
+ * 기준일(asOf, 'YYYY-MM-DD')을 안 주면 시리즈의 마지막 날이다. days=null이면 전체. 통화를 섞지 않으므로 시리즈는 통화 하나여야 한다.
+ * @param {{day:string, net:number}[]} series @param {number|null} days @param {string} [asOf]
+ */
+export function periodPnl(series, days, asOf) {
+  const source = 'metrics.daily';
+  const end = asOf ?? series.at(-1)?.day;
+  if (!end) return { value: null, source, note: '청산된 거래 없음' };
+  const from = days == null ? null : new Date(Date.parse(end + 'T00:00:00Z') - (days - 1) * 86400e3).toISOString().slice(0, 10);
+  const pts = series.filter((p) => p.day <= end && (from == null || p.day >= from));
+  let cum = 0, gp = 0, gl = 0, up = 0, down = 0;
+  const points = pts.map((p) => {
+    cum += p.net;
+    if (p.net > 0) { gp += p.net; up++; } else if (p.net < 0) { gl += p.net; down++; }
+    return { day: p.day, net: p.net, cum };
+  });
+  return {
+    value: { sum: cum, points, profitDays: up, lossDays: down, tradedDays: pts.length, dayWinRate: pts.length ? up / pts.length : null, grossProfit: gp, grossLoss: gl, from, to: end },
+    source, note: `${from ?? '처음'} ~ ${end}(KST 청산일) · 거래가 있던 날만 · 일 승률=수익일/거래일`,
+  };
+}

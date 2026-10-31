@@ -67,3 +67,19 @@ input,select{background:var(--bg);border-radius:8px;padding:8px 10px}
 .badge{background:rgba(224,165,38,.15);color:var(--warn);border:1px solid var(--warn)}
 a{color:var(--acc)}
 @media(max-width:600px){main{padding:12px}header{padding:10px 12px}.card .v{font-size:18px}}
+
+.seg{display:inline-flex;gap:2px;background:var(--bg);padding:3px;border-radius:9px;border:1px solid var(--line)}
+.seg button{background:none;border:0;color:var(--mute);font-weight:500;padding:5px 12px;border-radius:7px}
+.seg button.on{background:var(--panel2);color:var(--fg)}
+.between{display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap}
+h2.big{font-size:16px;color:var(--fg);margin:0}
+.bignum{font:600 30px var(--mono);margin:6px 0 10px}
+.bignum small{font-size:14px;color:var(--mute);font-weight:400}
+.split{display:grid;grid-template-columns:2fr 1fr;gap:12px}
+.split section{margin-bottom:0}
+@media(max-width:800px){.split{grid-template-columns:1fr;gap:0}.split section{margin-bottom:12px}}
+.stat{margin:12px 0}.stat .k{color:var(--mute);font-size:12px}.stat .sv{font:600 22px var(--mono)}
+.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.two .stat:last-child{text-align:right}
+details{margin-top:10px}summary{cursor:pointer;color:var(--mute);margin-bottom:8px}
+.grid{margin-top:2px}

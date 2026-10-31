@@ -91,3 +91,14 @@ test('최대 노출: 동시 보유 합의 최댓값, 같은 시각 청산 우선
   assert.equal(buildMetrics([]).count.value, 0);
   assert.equal(buildMetrics([]).winRate.value, null);
 });
+
+import { periodPnl } from '../src/core/metrics.js';
+test('periodPnl: 최근 N일 자르기·수익일/손실일·누적 이익/손실', () => {
+  const s = [{ day: '2026-10-01', net: 100 }, { day: '2026-10-20', net: -30 }, { day: '2026-10-25', net: 50 }, { day: '2026-10-28', net: -10 }];
+  const a = periodPnl(s, 7).value; // 10-22 ~ 10-28
+  assert.equal(a.from, '2026-10-22'); assert.equal(a.sum, 40); assert.equal(a.profitDays, 1); assert.equal(a.lossDays, 1);
+  assert.deepEqual(a.points.map((p) => p.cum), [50, 40]);
+  const all = periodPnl(s, null).value;
+  assert.equal(all.grossProfit, 150); assert.equal(all.grossLoss, -40); assert.equal(all.dayWinRate, 0.5);
+  assert.equal(periodPnl([], 30).value, null);
+});

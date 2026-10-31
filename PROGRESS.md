@@ -66,6 +66,10 @@
 - 남은 일: 사용자가 노션에 개인 DB(속성: 날짜·종목·방향·전략·실수·등급·연결ID)와 읽기 전용 통합을 만들고 .env.local에 NOTION_TOKEN·NOTION_DB를 넣은 뒤 `node --env-file=.env.local scripts/notion-export.js` 실행 → 파일을 #/journal에 업로드. 실제 속성 타입(종목이 select인지 text인지 등)은 확인 필요
 - 주의: 계획과 달리 브라우저 직접 호출이 아니라 내보내기 스크립트(노션 API CORS). Notion-Version 2022-06-28 고정(2025-09-03부터 DB query는 deprecated, data source query로 이동 — 문서에서 엔드포인트 경로는 확인 못 함). 집계는 metrics.js가 아니라 notion.js에 둠. 시각 있는 일지는 ±5분 허용 연결
 
+## 대시보드 개편 (2026-10-31)
+- 한 일: 기간 탭(전체·7·30·90일) 공유, "N일 손익" 큰 숫자+누적 영역차트, 일간 PnL 막대(크로스헤어 값 표시)+PnL 분석(일 승률·수익일/손실일·누적 이익/손실), KPI 4개만 노출·나머지 접기, 구분별 성과 탭화. metrics.periodPnl 추가(+테스트)
+- 주의: 기간 기준일은 오늘이 아니라 데이터의 마지막 청산일. 브라우저 확인 대기
+
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
 ## N단계 (YYYY-MM-DD)
