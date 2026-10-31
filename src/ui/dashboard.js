@@ -1,7 +1,8 @@
 import { createChart } from '../../vendor/lightweight-charts.mjs';
 import { h, card, table, td, fmtNum, fmtPct, fmtDur, cls } from './dom.js';
 import { S } from './store.js';
-import { periodPnl } from '../core/metrics.js';
+const KST_MS = 9 * 3600 * 1000;
+import { periodPnl, monthStats } from '../core/metrics.js';
 
 const ui = { filter: 'ALL', ccy: null, month: null, range: 30, grp: '상품군' };
 const RANGES = [[null, '전체'], [7, '7일'], [30, '30일'], [90, '90일']];
@@ -71,7 +72,7 @@ export function dashboardView(rerender) {
     filters, top,
     h('div', { class: 'split' }, daily, analysis),
     h('section', {}, main, more),
-    h('section', {}, h('h2', {}, '월 캘린더 (KST)'), calendar(eq, rerender)),
+    calendarSection(r, rerender),
     h('section', {}, h('div', { class: 'between' }, h('h2', {}, '구분별 성과'), seg(Object.keys(GROUPS).map((k) => [k, k]), ui.grp, (v) => { ui.grp = v; rerender(); })), groupTable(GROUPS[ui.grp]())));
 }
 
@@ -94,28 +95,57 @@ function drawCharts(lineEl, barEl, P, readDate, readVal) {
   ro.observe(lineEl);
 }
 
-function calendar(eq, rerender) {
-  if (!eq.length) return h('div', { class: 'mute' }, '-');
-  const months = [...new Set(eq.map((e) => e.day.slice(0, 7)))];
+const NS = 'http://www.w3.org/2000/svg';
+const svg = (tag, attrs = {}, ...kids) => { const e = document.createElementNS(NS, tag); for (const [k, v] of Object.entries(attrs)) e.setAttribute(k, v); e.append(...kids); return e; };
+
+function sparkline(curve) {
+  const W = 140, H = 56;
+  if (curve.length < 2) return h('div', { class: 'mute' }, '-');
+  const vs = curve.map((c) => c.cum), lo = Math.min(0, ...vs), hi = Math.max(0, ...vs), sp = hi - lo || 1;
+  const pts = curve.map((c, i) => [(i / (curve.length - 1)) * W, H - 4 - ((c.cum - lo) / sp) * (H - 8)]);
+  const line = pts.map((p) => p.join(',')).join(' ');
+  const up = vs.at(-1) >= 0, col = up ? '#3ecf8e' : '#f0616d';
+  return svg('svg', { viewBox: `0 0 ${W} ${H}`, width: W, height: H, class: 'spark' },
+    svg('polygon', { points: `0,${H} ${line} ${W},${H}`, fill: col, 'fill-opacity': '.15' }),
+    svg('polyline', { points: line, fill: 'none', stroke: col, 'stroke-width': '2', 'stroke-linejoin': 'round' }));
+}
+function ring(rate) {
+  const R = 30, C = 2 * Math.PI * R * 0.5; // 반원 호
+  const arc = (frac, col) => svg('path', { d: `M 6 38 A ${R} ${R} 0 0 1 66 38`, fill: 'none', stroke: col, 'stroke-width': '7', 'stroke-linecap': 'round', 'stroke-dasharray': `${C * frac} ${C}` });
+  return svg('svg', { viewBox: '0 0 72 44', width: 84, height: 52 }, arc(1, '#363c44'), rate == null ? svg('g') : arc(rate, '#3ecf8e'));
+}
+
+function calendarSection(r, rerender) {
+  const closed = r.trades.filter((t) => t.status === 'CLOSED' && t.closeTs != null);
+  const months = [...new Set(closed.map((t) => new Date(t.closeTs + KST_MS).toISOString().slice(0, 7)))].sort();
+  if (!months.length || !ui.ccy) return h('section', {}, h('h2', {}, '트레이딩 캘린더 (KST)'), h('div', { class: 'mute' }, '-: 청산된 거래 없음'));
   if (!months.includes(ui.month)) ui.month = months.at(-1);
   const i = months.indexOf(ui.month);
-  const net = new Map(eq.map((e) => [e.day, e.net]));
+  const ms = monthStats(r.trades, ui.month, ui.ccy, ui.filter), v = ms.value;
   const [y, mo] = ui.month.split('-').map(Number);
   const first = new Date(Date.UTC(y, mo - 1, 1)).getUTCDay();
-  const days = new Date(Date.UTC(y, mo, 0)).getUTCDate();
-  const cells = ['일', '월', '화', '수', '목', '금', '토'].map((d) => h('div', { class: 'h' }, d));
-  for (let k = 0; k < first; k++) cells.push(h('div', { class: 'h' }));
-  for (let d = 1; d <= days; d++) {
-    const key = `${ui.month}-${String(d).padStart(2, '0')}`;
-    const v = net.get(key);
-    cells.push(h('div', {}, h('div', { class: 'mute' }, d), v == null ? null : h('div', { class: cls(v) }, fmtNum(v, 1))));
+  const nd = new Date(Date.UTC(y, mo, 0)).getUTCDate();
+  const cells = ['일', '월', '화', '수', '목', '금', '토'].map((d) => h('div', { class: 'dow' }, d));
+  for (let k = 0; k < first; k++) cells.push(h('div', { class: 'day empty' }));
+  for (let d = 1; d <= nd; d++) {
+    const day = v.days[`${ui.month}-${String(d).padStart(2, '0')}`];
+    cells.push(h('div', { class: 'day ' + (day ? (day.net > 0 ? 'pos' : day.net < 0 ? 'neg' : 'flat') : '') },
+      h('div', { class: 'dn' }, d),
+      day ? [h('div', { class: 'dv ' + cls(day.net) }, (day.net > 0 ? '+' : '') + fmtNum(day.net, 2)), h('div', { class: 'dc' }, `${day.count}건 청산`)] : null));
   }
-  return h('div', {},
-    h('div', { class: 'row' },
-      h('button', { class: 'sub', disabled: i === 0 ? true : null, onclick: () => { ui.month = months[i - 1]; rerender(); } }, '◀'),
-      h('strong', {}, ui.month),
-      h('button', { class: 'sub', disabled: i === months.length - 1 ? true : null, onclick: () => { ui.month = months[i + 1]; rerender(); } }, '▶')),
-    h('div', { class: 'cal' }, cells));
+  const nav = h('div', { class: 'row' },
+    h('button', { class: 'sub', disabled: i === 0 ? true : null, onclick: () => { ui.month = months[i - 1]; rerender(); } }, '◀'),
+    h('strong', {}, `${y}년 ${mo}월`),
+    h('button', { class: 'sub', disabled: i === months.length - 1 ? true : null, onclick: () => { ui.month = months[i + 1]; rerender(); } }, '▶'),
+    h('span', { class: 'mute' }, `${ui.filter} · ${ui.ccy}`));
+  const dash = (x, f) => (x == null ? '--' : f(x));
+  const panel = (title, ...kids) => h('div', { class: 'pcard', ...metaOf(ms) }, h('div', { class: 'pt' }, title), ...kids);
+  const side = h('div', { class: 'cside' },
+    panel('총 손익', h('div', { class: 'between' }, h('div', { class: 'psv ' + cls(v.total) }, v.count ? (v.total > 0 ? '+' : '') + fmtNum(v.total) + ' ' + ui.ccy : '--'), sparkline(v.curve))),
+    panel('수익 팩터', h('div', { class: 'psv' }, dash(v.profitFactor, (x) => fmtNum(x, 2)))),
+    panel('승률 / 패율', h('div', { class: 'between' }, h('div', {}, h('span', { class: 'psv up' }, dash(v.winRate, fmtPct)), ' ', h('span', { class: 'psv down' }, dash(v.lossRate, fmtPct))), ring(v.winRate))),
+    panel('손익비', h('div', { class: 'psv' }, dash(v.riskReward, (x) => fmtNum(x, 2)))));
+  return h('section', {}, h('h2', { class: 'big' }, '트레이딩 캘린더 (KST)'), nav, h('div', { class: 'calwrap' }, h('div', { class: 'calgrid' }, cells), side));
 }
 
 function groupTable(entries) {

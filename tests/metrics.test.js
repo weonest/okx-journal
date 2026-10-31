@@ -102,3 +102,15 @@ test('periodPnl: 최근 N일 자르기·수익일/손실일·누적 이익/손�
   assert.equal(all.grossProfit, 150); assert.equal(all.grossLoss, -40); assert.equal(all.dayWinRate, 0.5);
   assert.equal(periodPnl([], 30).value, null);
 });
+
+import { monthStats } from '../src/core/metrics.js';
+test('monthStats: 월 필터·일별 건수·수익 팩터·손익비', () => {
+  const T = (day, net, inst = 'FUTURES') => ({ status: 'CLOSED', instType: inst, closeTs: Date.parse(day + 'T03:00:00Z'), amounts: { USDT: { net } } });
+  const ts = [T('2026-10-05', 30), T('2026-10-05', -10), T('2026-10-06', 20), T('2026-10-07', -10), T('2026-09-30', 99), T('2026-10-08', 5, 'SPOT')];
+  const s = monthStats(ts, '2026-10', 'USDT', 'FUTURES').value;
+  assert.equal(s.count, 4); assert.equal(s.days['2026-10-05'].count, 2); assert.equal(s.total, 30);
+  assert.equal(s.profitFactor, 50 / 20); assert.equal(s.riskReward, 25 / 10);
+  assert.equal(s.winRate, 0.5); assert.equal(s.lossRate, 0.5);
+  assert.deepEqual(s.curve.map((c) => c.cum), [20, 40, 30]);
+  assert.equal(monthStats([T('2026-10-05', 1)], '2026-10', 'USDT').value.profitFactor, null);
+});

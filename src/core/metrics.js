@@ -177,3 +177,36 @@ export function periodPnl(series, days, asOf) {
     source, note: `${from ?? '처음'} ~ ${end}(KST 청산일) · 거래가 있던 날만 · 일 승률=수익일/거래일`,
   };
 }
+
+/**
+ * 한 달(KST 청산일, 'YYYY-MM')의 통화별 요약: 일별 손익·청산 건수, 총손익, 수익 팩터, 승/패율, 손익비, 누적 곡선.
+ * 거래 단위로 판정하며(amounts[ccy].net의 부호) 통화를 섞지 않는다. 분모가 0이면 해당 값은 null.
+ * @param {any[]} trades @param {string} month @param {string} ccy @param {'ALL'|'FUTURES'|'SPOT'|'MARGIN'} [filter]
+ */
+export function monthStats(trades, month, ccy, filter = 'ALL') {
+  const source = `${filter} ${ccy} 청산 거래(KST ${month})`;
+  const days = {};
+  let wins = 0, losses = 0, n = 0, winSum = 0, lossSum = 0;
+  for (const t of trades) {
+    if (t.status !== 'CLOSED' || t.closeTs == null || (filter !== 'ALL' && t.instType !== filter)) continue;
+    const a = t.amounts?.[ccy];
+    const day = dayKey(t.closeTs);
+    if (!a || day.slice(0, 7) !== month) continue;
+    const d = (days[day] ??= { net: 0, count: 0 });
+    d.net += a.net; d.count++; n++;
+    if (a.net > 0) { wins++; winSum += a.net; } else if (a.net < 0) { losses++; lossSum += a.net; }
+  }
+  let cum = 0;
+  const curve = Object.keys(days).sort().map((day) => ({ day, cum: (cum += days[day].net) }));
+  const ratio = (a, b) => (b ? a / b : null);
+  return {
+    value: {
+      days, curve, total: cum, count: n, wins, losses,
+      winRate: ratio(wins, n), lossRate: ratio(losses, n),
+      profitFactor: lossSum ? winSum / Math.abs(lossSum) : null,
+      riskReward: wins && losses ? (winSum / wins) / Math.abs(lossSum / losses) : null,
+    },
+    source,
+    note: '거래 단위(통화별 순손익 부호). 수익 팩터=이익 합/|손실 합|, 손익비=평균이익/|평균손실|, 무승부는 승·패에서 제외하고 분모에는 포함',
+  };
+}
