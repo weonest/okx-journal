@@ -1,6 +1,6 @@
 # 진행 기록
 
-현재 단계: 6
+현재 단계: 7
 
 ## 0단계 (2026-10-31)
 - 한 일: package.json, .gitignore, vendor 차트 라이브러리, git init, private 저장소 weonest/okx-journal push
@@ -36,6 +36,11 @@
 - 한 일: orders.js(buildOrders: ordId 조인·VWAP·maker/taker·불일치 목록·상품군별 상태/체결률/취소율/부분체결/시장가 비율·Bill 매칭률), tests/orders.test.js 4개(전체 통과)
 - 남은 일: CSV A/B의 state·ordType·execType 표기(maker/taker, canceled 등)와 szUnit 실파일 확인. Order fee 부호·accFillSz 단위(계약수 vs 코인) 실데이터 확인
 - 주의: 손익·수수료는 합산하지 않음(주문 단위 fee 대조만). 체결 없는 주문은 불일치에서 제외. 체결률=state filled 기준, 부분체결=체결>0 & 수량 미달 & 미완료
+
+## 7단계 (2026-10-31) — 완료(실데이터 검증은 거래 발생 후로 이월)
+- 한 일: metrics.js(buildMetrics: 상품군 필터·통화별 합계·승률/평균/손익비·일별 KST 누적·누적 MDD·보유시간·롱숏·레버리지·최대 노출·일 빈도), tests/metrics.test.js 5개(전체 통과)
+- 남은 일: USD 합계는 opts.usdRate(ccy,ts,trade)→{rate,basis}를 호출 측이 주입(CSV C *-USD → fillIdxPx → 캔들 종가 순서는 8단계 조립부에서). 레버리지는 trade.lever, 최대 노출은 opts.notionalOf 필요 — trade에 lever·ctVal 전파는 미구현. 잔고 기준 MDD 미구현
+- 주의: 통화 여럿인 거래는 승/패에서 제외(note 표시). 승률 분모는 무승부 포함, 손익비=평균이익/|평균손실|. MDD는 0에서 시작한 누적 순손익 기준
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
