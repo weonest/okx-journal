@@ -17,9 +17,9 @@
 - 남은 일: export 인증 성공, 최근 3개월 거래 0건. DATA.md "확인 결과"는 아카이브·CSV 데이터로 채운다. 사용자가 `cp data/okx-subtypes.json docs/subtypes.json` 실행 필요
 - 주의: API instType SWAP·FUTURES는 앱 FUTURES로 합침. CSV E(archive)의 instType SWAP 변환은 3단계에서. 첫 export 실행 시 실제 응답으로 오류 가능(코드는 가짜 fetch로만 검증)
 
-## 3단계 (2026-10-31) — 코드 완료, 실파일 확인 남음
+## 3단계 (2026-10-31) — 완료(실파일 확인은 거래 발생 후로 이월)
 - 한 일: client.post, okx/archive.js(apply/get/wait), fromCsv E에 subtypes→type·SWAP→FUTURES, export.js --archive=2025Q3, tests/archive.test.js(전체 22개 통과)
-- 남은 일: 사용자가 `node --env-file=.env.local scripts/export.js --archive=<분기>` 실행 후 압축 해제, 실제 헤더를 DATA.md "확인 결과"에 기록(완료 기준). 호출 시 `docs/subtypes.json`을 opts.subtypes로 넘길 것
+- 남은 일: 사용자는 거래 이력이 전혀 없어 아카이브 실파일이 없음. 거래가 생기고 3개월이 지나면 `--archive=<분기>`로 받아 헤더를 DATA.md에 기록. 호출 시 `docs/subtypes.json`을 opts.subtypes로 넘길 것
 - 주의: 신청은 하루 12회 제한(스크립트는 1회만 신청). 다운로드 응답 형식(zip 여부)은 실제 실행으로 확인 필요
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
