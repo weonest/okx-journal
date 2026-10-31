@@ -2,7 +2,7 @@ import { createChart } from '../../vendor/lightweight-charts.mjs';
 import { h, table, td, fmtNum, fmtTs, fmtDur, cls } from './dom.js';
 import { S } from './store.js';
 
-const ui = { type: 'ALL', inst: 'ALL', side: 'ALL', sort: 'closeTs', dir: -1, sel: null };
+const ui = { type: 'ALL', inst: 'ALL', side: 'ALL', sort: 'closeTs', dir: -1, sel: null, bar: 'auto' };
 
 export function tradesView(rerender) {
   const r = S.result;
@@ -44,22 +44,32 @@ function detail(t, r, rerender) {
   return h('div', {},
     h('div', { class: 'row' }, h('button', { class: 'sub', onclick: () => { ui.sel = null; rerender(); } }, '◀ 목록'), h('strong', {}, `${t.instId} ${t.side} · ${t.status}`)),
     h('section', {}, h('div', {}, `진입 ${fmtTs(t.openTs)} → 청산 ${fmtTs(t.closeTs)} (KST) · 최대 수량 ${fmtNum(t.maxSize, 6)}${t.closeReason && t.closeReason !== 'TRADE' ? ' · ' + t.closeReason : ''}`), h('ul', {}, amt.map((a) => h('li', {}, a)))),
-    h('section', {}, h('h2', {}, '캔들 (공개 API market/history-candles)'), msg, chartEl),
+    h('section', {}, h('h2', {}, '캔들 (공개 API market/history-candles)'),
+      h('div', { class: 'row' }, BAR_BTN.map(([b, label]) => h('button', { class: b === ui.bar ? null : 'sub', onclick: () => { ui.bar = b; rerender(); } }, label))), msg, chartEl),
     h('section', {}, h('h2', {}, '이벤트 타임라인'), ev.length ? table(['시각(KST)', '구분', '가격', '수량', '손익', '수수료', '통화'], ev.map((e) => [fmtTs(e.ts), e.kind, fmtNum(e.px, 6), fmtNum(e.sz, 6), fmtNum(e.pnl, 4), fmtNum(e.fee, 4), e.ccy ?? '-'])) : h('div', { class: 'mute' }, '-: 연결된 이벤트 없음')));
 }
 
-const BARS = [['1m', 60e3], ['5m', 300e3], ['15m', 900e3], ['1H', 3600e3], ['4H', 14400e3], ['1D', 86400e3]];
+const BARS = [['1m', 60e3], ['5m', 300e3], ['15m', 900e3], ['1H', 3600e3], ['4H', 14400e3], ['1D', 86400e3], ['1W', 604800e3]];
+const BAR_BTN = [['auto', '자동'], ['1m', '1분'], ['15m', '15분'], ['4H', '4시간'], ['1D', '일'], ['1W', '주']];
 
 async function drawCandles(el, msg, t, fills, bills) {
   try {
     const end = t.closeTs ?? Date.now(), span = Math.max(end - t.openTs, 60e3);
-    const [bar, ms] = BARS.find(([, m]) => span / m <= 40) ?? BARS.at(-1);
+    const [bar, ms] = (ui.bar !== 'auto' && BARS.find(([b]) => b === ui.bar)) || BARS.find(([, m]) => span / m <= 40) || BARS.at(-1);
     const pad = Math.max(ms * 20, span * 0.3);
     const from = t.openTs - pad, to = end + pad;
-    const url = `https://www.okx.com/api/v5/market/history-candles?instId=${encodeURIComponent(t.instId)}&bar=${bar}&after=${Math.ceil(to)}&limit=100`;
-    const j = await (await fetch(url)).json();
-    if (j.code !== '0') throw new Error(j.msg || 'code ' + j.code);
-    const cs = j.data.map((c) => ({ time: Math.floor(+c[0] / 1000), open: +c[1], high: +c[2], low: +c[3], close: +c[4] })).filter((c) => c.time * 1000 >= from).sort((a, b) => a.time - b.time);
+    const all = new Map();
+    let after = Math.ceil(to);
+    for (let page = 0; page < 12; page++) { // 한 번에 100개씩, from까지 거슬러 올라간다
+      const j = await (await fetch(`https://www.okx.com/api/v5/market/history-candles?instId=${encodeURIComponent(t.instId)}&bar=${bar}&after=${after}&limit=100`)).json();
+      if (j.code !== '0') throw new Error(j.msg || 'code ' + j.code);
+      if (!j.data.length) break;
+      for (const c of j.data) all.set(+c[0], c);
+      const oldest = Math.min(...j.data.map((c) => +c[0]));
+      if (oldest <= from) break;
+      after = oldest;
+    }
+    const cs = [...all.values()].map((c) => ({ time: Math.floor(+c[0] / 1000), open: +c[1], high: +c[2], low: +c[3], close: +c[4] })).filter((c) => c.time * 1000 >= from).sort((a, b) => a.time - b.time);
     if (!cs.length) { msg.textContent = '-: 해당 구간 캔들 없음'; return; }
     msg.textContent = `봉 ${bar} · ${cs.length}개`;
     if (!el.isConnected) return;
