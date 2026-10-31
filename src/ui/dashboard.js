@@ -1,5 +1,5 @@
 import { createChart } from '../../vendor/lightweight-charts.mjs';
-import { h, card, table, td, fmtNum, fmtPct, fmtDur, cls } from './dom.js';
+import { h, icon, card, table, td, fmtNum, fmtPct, fmtDur, cls } from './dom.js';
 import { S } from './store.js';
 const KST_MS = 9 * 3600 * 1000;
 import { periodPnl, monthStats } from '../core/metrics.js';
@@ -29,7 +29,7 @@ export function calendarView(rerender) {
 
 export function dashboardView(rerender) {
   const r = S.result;
-  if (!r) return h('section', {}, S.error ? '오류: ' + S.error : '데이터가 없습니다. 설정에서 동기화하거나 CSV를 올리고, 또는 "예시 데이터 보기"를 누르세요.');
+  if (!r) return h('section', {}, S.error ? '오류: ' + S.error : '데이터가 없습니다. 설정에서 동기화하거나 CSV를 올리고, 또는 우측 상단 "예시 데이터"를 누르세요.');
   const m = r.metrics[ui.filter];
   const totals = m.totals.value;
   const ccys = Object.keys(m.daily.value);
@@ -66,10 +66,10 @@ export function dashboardView(rerender) {
 
   const wl = m.winLoss.value[ui.ccy];
   const main = h('div', { class: 'grid' },
-    card(`순손익 (${ui.ccy ?? '-'})`, { ...m.totals, value: ui.ccy && totals[ui.ccy] ? totals[ui.ccy].net : null }, fmtNum(totals[ui.ccy]?.net)),
-    card('거래 승률', m.winRate, fmtPct(m.winRate.value), `${m.count.value}건`),
-    card('손익비', { ...m.winLoss, value: wl?.payoff ?? null }, fmtNum(wl?.payoff)),
-    card('MDD (누적 순손익)', { ...m.mdd, value: m.mdd.value[ui.ccy] ?? null }, fmtNum(m.mdd.value[ui.ccy])));
+    card(`누적 순손익 (${ui.ccy ?? '-'})`, { ...m.totals, value: ui.ccy && totals[ui.ccy] ? totals[ui.ccy].net : null }, fmtNum(totals[ui.ccy]?.net), '수수료·펀딩·이자 반영 후', 'trend', cls(totals[ui.ccy]?.net)),
+    card('거래 승률', m.winRate, fmtPct(m.winRate.value), `청산 ${m.count.value}건`, 'percent', 'up'),
+    card('손익비 (평균이익/평균손실)', { ...m.winLoss, value: wl?.payoff ?? null }, fmtNum(wl?.payoff), wl?.avgWin != null && wl?.avgLoss != null ? `${fmtNum(wl.avgWin)} / ${fmtNum(wl.avgLoss)}` : null, 'award', 'gold'),
+    card('최대 낙폭 (MDD)', { ...m.mdd, value: m.mdd.value[ui.ccy] ?? null }, fmtNum(m.mdd.value[ui.ccy]), '누적 순손익 고점 대비', 'alert', 'down'));
   const more = h('details', {}, h('summary', {}, '지표 더 보기'), h('div', { class: 'grid' },
     card('USD 합계', m.usdNet, fmtNum(m.usdNet.value)),
     card('평균 이익', { ...m.winLoss, value: wl?.avgWin ?? null }, fmtNum(wl?.avgWin)),
@@ -85,9 +85,9 @@ export function dashboardView(rerender) {
     '롱 / 숏': () => Object.entries(r.groups.side),
   };
   return h('div', {},
-    filters, top,
+    filters, main, top,
     h('div', { class: 'split' }, daily, analysis),
-    h('section', {}, main, more),
+    h('section', {}, more),
     h('section', {}, h('div', { class: 'between' }, h('h2', {}, '구분별 성과'), seg(Object.keys(GROUPS).map((k) => [k, k]), ui.grp, (v) => { ui.grp = v; rerender(); })), groupTable(GROUPS[ui.grp]())));
 }
 

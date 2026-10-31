@@ -1,5 +1,5 @@
 import { h, fmtTs } from './dom.js';
-import { S, setApi, addCsv, loadSample, clearData, loadKeys, saveKeys, clearKeys, load } from './store.js';
+import { S, setApi, addCsv, clearData, loadKeys, saveKeys, clearKeys, load } from './store.js';
 import { createClient } from '../core/okx/client.js';
 import { syncAll } from '../core/okx/sync.js';
 import { applyArchive, getArchive } from '../core/okx/archive.js';
@@ -65,7 +65,6 @@ export function settingsView() {
     h('section', {}, h('h2', {}, '과거 원장 아카이브'),
       h('div', { class: 'row' }, yr, qt, applyBtn, statBtn), link),
     h('section', {}, h('h2', {}, 'CSV 업로드'), drop, h('div', { class: 'row' }, pick,
-      h('button', { class: 'sub', onclick: loadSample }, '예시 데이터 보기'),
       h('button', { class: 'sub', onclick: clearData }, '불러온 데이터 비우기')),
       h('ul', {}, S.csvInfo.map((i) => h('li', { class: i.error ? 'down' : '' },
         `${i.name} → ${i.error ? '오류: ' + i.error : `${i.kind} ${i.records}건` + (i.duplicates ? ` (중복 ${i.duplicates})` : '') + (i.tsMissing ? ` · 시각 없음 ${i.tsMissing}` : '')}`)))));

@@ -18,7 +18,7 @@ export function journalView() {
   const up = h('section', {}, h('h2', {}, '노션 일지 불러오기'),
     h('div', { class: 'mute' }, '노션 API는 브라우저에서 막혀 있어 `node --env-file=.env.local scripts/notion-export.js`로 만든 data/notion-journal.json을 올립니다.'),
     h('div', { class: 'row' }, pick), err);
-  if (!S.journal) return h('div', {}, up, h('section', {}, h('div', { class: 'mute' }, '-: 일지가 없습니다. 예시 데이터를 켜면 합성 일지가 함께 보입니다.')));
+  if (!S.journal) return h('div', {}, up, h('section', {}, h('div', { class: 'mute' }, '-: 일지가 없습니다. 우측 상단 "예시 데이터"를 누르면 합성 일지가 함께 보입니다.')));
   if (!S.linked) return h('div', {}, up, h('section', {}, '거래 데이터가 없어 연결하지 못했습니다. 먼저 거래 데이터를 불러오세요.'));
 
   const L = S.linked, tradeById = new Map(S.result.trades.map((t) => [t.id, t]));
