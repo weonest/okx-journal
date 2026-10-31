@@ -38,7 +38,7 @@ function detail(t, r, rerender) {
     ...(t.fillIds ? fills.map((f) => ({ ts: f.ts, kind: `Fill ${f.side}`, px: f.fillPx, sz: f.fillSz, pnl: null, fee: f.fee, ccy: f.feeCcy })) : []),
   ].sort((a, b) => a.ts - b.ts);
   const amt = Object.entries(t.amounts).map(([c, a]) => `${c}: 손익 ${fmtNum(a.pnl, 4)} / 수수료 ${fmtNum(a.fee, 4)} / 이자 ${fmtNum(a.interest, 4)} / 펀딩 ${fmtNum(a.funding, 4)} = ${fmtNum(a.net, 4)}`);
-  const chartEl = h('div', { class: 'chart' });
+  const chartEl = h('div', { class: 'chart', style: 'height:380px' });
   const msg = h('div', { class: 'mute' }, '캔들 불러오는 중…');
   setTimeout(() => drawCandles(chartEl, msg, t, fills, bills), 0);
   return h('div', {},
@@ -73,7 +73,8 @@ async function drawCandles(el, msg, t, fills, bills) {
     if (!cs.length) { msg.textContent = '-: 해당 구간 캔들 없음'; return; }
     msg.textContent = `봉 ${bar} · ${cs.length}개`;
     if (!el.isConnected) return;
-    const ch = createChart(el, { width: el.clientWidth, height: 220, layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' }, grid: { vertLines: { color: '#363c44' }, horzLines: { color: '#363c44' } }, timeScale: { timeVisible: true } });
+    const ch = createChart(el, { width: el.clientWidth, height: 380, layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' }, grid: { vertLines: { color: '#363c44' }, horzLines: { color: '#363c44' } }, timeScale: { timeVisible: true, rightOffset: 4, minBarSpacing: 2, borderColor: '#363c44' }, rightPriceScale: { borderColor: '#363c44' }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true, axisDoubleClickReset: true }, kineticScroll: { mouse: false, touch: true } });
+    new ResizeObserver(() => ch.applyOptions({ width: el.clientWidth })).observe(el);
     const s = ch.addCandlestickSeries();
     s.setData(cs);
     const snap = (ts) => { const sec = ts / 1000; let b = cs[0].time; for (const c of cs) if (c.time <= sec) b = c.time; return b; };
@@ -82,5 +83,6 @@ async function drawCandles(el, msg, t, fills, bills) {
     for (const e of evs) mk.push({ time: snap(e.ts), position: e.buy ? 'belowBar' : 'aboveBar', shape: e.buy ? 'arrowUp' : 'arrowDown', color: e.buy ? '#3ecf8e' : '#f0616d', text: e.buy ? '매수' : '매도' });
     s.setMarkers(mk.sort((a, b) => a.time - b.time));
     ch.timeScale().fitContent();
+    el.addEventListener('dblclick', () => ch.timeScale().fitContent());
   } catch (e) { msg.textContent = '-: 캔들을 불러오지 못했습니다 (' + e.message + ')'; }
 }
