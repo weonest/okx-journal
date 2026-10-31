@@ -63,7 +63,7 @@ async function drawCandles(el, msg, t, fills, bills) {
     if (!cs.length) { msg.textContent = '-: 해당 구간 캔들 없음'; return; }
     msg.textContent = `봉 ${bar} · ${cs.length}개`;
     if (!el.isConnected) return;
-    const ch = createChart(el, { width: el.clientWidth, height: 220, layout: { background: { color: '#141a18' }, textColor: '#8a9894' }, grid: { vertLines: { color: '#263230' }, horzLines: { color: '#263230' } }, timeScale: { timeVisible: true } });
+    const ch = createChart(el, { width: el.clientWidth, height: 220, layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' }, grid: { vertLines: { color: '#363c44' }, horzLines: { color: '#363c44' } }, timeScale: { timeVisible: true } });
     const s = ch.addCandlestickSeries();
     s.setData(cs);
     const snap = (ts) => { const sec = ts / 1000; let b = cs[0].time; for (const c of cs) if (c.time <= sec) b = c.time; return b; };

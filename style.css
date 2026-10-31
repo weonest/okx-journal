@@ -1,5 +1,5 @@
 @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;600&display=swap');
-:root{--bg:#0a0d0c;--panel:#141a18;--panel2:#1b2321;--line:#263230;--fg:#e6ece9;--mute:#8a9894;--up:#3ecf8e;--down:#f0616d;--acc:#3ecf8e;--warn:#e0a526;--mono:'JetBrains Mono',ui-monospace,Menlo,monospace}
+:root{--bg:#16191d;--panel:#1f2328;--panel2:#2a2f35;--line:#363c44;--fg:#eef1f3;--mute:#9aa4ab;--up:#3ecf8e;--down:#f0616d;--acc:#3ecf8e;--warn:#e0a526;--mono:'JetBrains Mono',ui-monospace,Menlo,monospace}
 *{box-sizing:border-box}
 html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;overflow-x:hidden}
 header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}

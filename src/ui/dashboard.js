@@ -50,7 +50,7 @@ export function dashboardView(rerender) {
 
 function drawCharts(lineEl, barEl, eq) {
   if (!eq.length || !lineEl.isConnected) return;
-  const opt = (el) => ({ width: el.clientWidth, height: 220, layout: { background: { color: '#141a18' }, textColor: '#8a9894' }, grid: { vertLines: { color: '#263230' }, horzLines: { color: '#263230' } }, timeScale: { borderColor: '#263230' }, rightPriceScale: { borderColor: '#263230' } });
+  const opt = (el) => ({ width: el.clientWidth, height: 220, layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' }, grid: { vertLines: { color: '#363c44' }, horzLines: { color: '#363c44' } }, timeScale: { borderColor: '#363c44' }, rightPriceScale: { borderColor: '#363c44' } });
   const a = createChart(lineEl, opt(lineEl));
   a.addLineSeries({ color: '#3ecf8e', lineWidth: 2 }).setData(eq.map((e) => ({ time: e.day, value: e.cum })));
   a.timeScale().fitContent();
