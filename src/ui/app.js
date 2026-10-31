@@ -3,10 +3,13 @@ import { S, subscribe } from './store.js';
 import { settingsView } from './settings.js';
 import { dataView } from './data.js';
 import { dashboardView } from './dashboard.js';
+import { tradesView } from './trades.js';
+import { ordersView } from './orders.js';
+import { positionsView } from './positions.js';
 
 const stub = (n) => () => h('section', {}, `${n}단계에서 구현합니다.`);
 const ROUTES = {
-  dashboard: ['대시보드', dashboardView], trades: ['거래', stub(9)], orders: ['주문', stub(9)], positions: ['포지션', stub(9)],
+  dashboard: ['대시보드', dashboardView], trades: ['거래', tradesView], orders: ['주문', ordersView], positions: ['포지션', positionsView],
   journal: ['일지', stub(11)], data: ['데이터 점검', dataView], settings: ['설정', settingsView],
 };
 const view = document.getElementById('view');

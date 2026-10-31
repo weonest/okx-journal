@@ -1,6 +1,6 @@
 # 진행 기록
 
-현재 단계: 8
+현재 단계: 9
 
 ## 0단계 (2026-10-31)
 - 한 일: package.json, .gitignore, vendor 차트 라이브러리, git init, private 저장소 weonest/okx-journal push
@@ -46,6 +46,11 @@
 - 한 일: core/pipeline.js(CSV·API→병합→분석, tests/pipeline.test.js), index.html·style.css, src/ui/(app·store·dom·settings·data·dashboard). 전체 테스트 통과
 - 남은 일: 사용자가 `npx --yes http-server -c-1 -p 8080`로 예시 데이터·모든 탭 렌더, 실제 키 동기화 건수가 export와 일치하는지 확인. vendor의 createChart export명과 브라우저 CORS(OKX 개인 API 직접 호출 가능 여부) 미확인. 동기화 결과는 새로고침 시 사라짐(증분 저장 없음)
 - 주의: USD 합계는 usdRate 미주입이라 '-'. 9단계 탭(거래·주문·포지션)과 journal은 자리표시
+
+## 9단계 (2026-10-31) — 코드 완료, 브라우저 확인 대기
+- 한 일: src/ui/trades.js(목록 정렬·필터, 상세 타임라인, market/history-candles 캔들+진입·청산 마커), positions.js(Position/CSV 스냅샷, SPOT 보유), orders.js(6단계 통계), app.js 라우트 연결. 전체 테스트 통과
+- 남은 일: 브라우저에서 예시 데이터로 거래 상세·캔들 표시 확인(8단계 확인 포함). vendor에 addCandlestickSeries·setMarkers(v4) 존재 여부 미확인. 캔들은 1회 100개만 조회(긴 보유는 봉이 굵어짐)
+- 주의: 미실현·노출은 선형계약 가정의 '추정'(OKX upl 필드가 Position 레코드에 없음). public/instruments는 쓰지 않고 Position.ctVal 사용. 상세에서 FUTURES 체결 연결은 Bill.tradeId 기준
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
