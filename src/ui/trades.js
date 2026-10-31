@@ -73,7 +73,7 @@ async function drawCandles(el, msg, t, fills, bills) {
     if (!cs.length) { msg.textContent = '-: 해당 구간 캔들 없음'; return; }
     msg.textContent = `봉 ${bar} · ${cs.length}개`;
     if (!el.isConnected) return;
-    const ch = createChart(el, { width: el.clientWidth, height: 380, layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' }, grid: { vertLines: { color: '#363c44' }, horzLines: { color: '#363c44' } }, timeScale: { timeVisible: true, rightOffset: 4, minBarSpacing: 2, borderColor: '#363c44' }, rightPriceScale: { borderColor: '#363c44' }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: true, pinch: true, axisPressedMouseMove: true, axisDoubleClickReset: true }, kineticScroll: { mouse: false, touch: true } });
+    const ch = createChart(el, { width: el.clientWidth, height: 380, layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' }, grid: { vertLines: { color: '#363c44' }, horzLines: { color: '#363c44' } }, timeScale: { timeVisible: true, rightOffset: 4, minBarSpacing: 2, borderColor: '#363c44' }, rightPriceScale: { borderColor: '#363c44' }, handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true, axisDoubleClickReset: true }, kineticScroll: { mouse: false, touch: true } });
     new ResizeObserver(() => ch.applyOptions({ width: el.clientWidth })).observe(el);
     const s = ch.addCandlestickSeries();
     s.setData(cs);
@@ -83,6 +83,16 @@ async function drawCandles(el, msg, t, fills, bills) {
     for (const e of evs) mk.push({ time: snap(e.ts), position: e.buy ? 'belowBar' : 'aboveBar', shape: e.buy ? 'arrowUp' : 'arrowDown', color: e.buy ? '#3ecf8e' : '#f0616d', text: e.buy ? '매수' : '매도' });
     s.setMarkers(mk.sort((a, b) => a.time - b.time));
     ch.timeScale().fitContent();
+    // 휠 확대·축소: 기본 단계가 작아 직접 처리한다(커서 위치 기준, 한 칸에 약 25%)
+    el.addEventListener('wheel', (e) => {
+      e.preventDefault();
+      const ts = ch.timeScale(), r = ts.getVisibleLogicalRange();
+      if (!r) return;
+      const f = Math.exp(Math.sign(e.deltaY) * Math.min(Math.abs(e.deltaY), 100) / 100 * 0.25);
+      const x = e.clientX - el.getBoundingClientRect().left;
+      const c = ts.coordinateToLogical(x) ?? (r.from + r.to) / 2;
+      ts.setVisibleLogicalRange({ from: c - (c - r.from) * f, to: c + (r.to - c) * f });
+    }, { passive: false });
     el.addEventListener('dblclick', () => ch.timeScale().fitContent());
   } catch (e) { msg.textContent = '-: 캔들을 불러오지 못했습니다 (' + e.message + ')'; }
 }
