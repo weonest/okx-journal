@@ -107,3 +107,16 @@ th.sortable{cursor:pointer}th.sortable:hover{color:var(--fg)}
 input[type=search]{min-width:240px;flex:1;max-width:420px}
 details.panel{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
 td .tag{margin-right:3px}
+
+header{flex-wrap:nowrap;gap:20px}
+header nav{flex:1;flex-wrap:wrap}
+.actions{display:flex;gap:6px;align-items:center}
+button.danger{color:var(--down);border-color:rgba(240,97,109,.5)}
+details.more{position:relative}
+details.more summary{list-style:none;cursor:pointer;color:var(--mute);padding:8px 14px;border-bottom:2px solid transparent;margin:0}
+details.more summary.on{color:var(--acc);border-bottom-color:var(--acc)}
+details.more summary::-webkit-details-marker{display:none}
+details.more .menu{position:absolute;z-index:10;top:100%;left:0;min-width:140px;background:var(--panel2);border:1px solid var(--line);border-radius:10px;padding:4px;display:flex;flex-direction:column}
+details.more .menu a{border:0;border-radius:6px}
+details.more .menu a:hover{background:var(--panel)}
+@media(max-width:900px){header{flex-wrap:wrap}.actions{width:100%}}

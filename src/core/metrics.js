@@ -210,3 +210,31 @@ export function monthStats(trades, month, ccy, filter = 'ALL') {
     note: '거래 단위(통화별 순손익 부호). 수익 팩터=이익 합/|손실 합|, 손익비=평균이익/|평균손실|, 무승부는 승·패에서 제외하고 분모에는 포함',
   };
 }
+
+const weekKey = (day) => { // 월요일 시작 주의 첫날(KST 날짜 문자열 기준)
+  const d = new Date(day + 'T00:00:00Z'); const dow = (d.getUTCDay() + 6) % 7;
+  return new Date(d.getTime() - dow * 86400e3).toISOString().slice(0, 10);
+};
+
+/**
+ * 주기(day|week|month)별 정산표: 청산 건수·승/패·승률·손익·수수료·이자+펀딩·순손익·누적. 청산일 KST, 통화별(거래의 amounts[ccy]).
+ * 주는 월요일 시작이며 행의 key는 그 주의 월요일 날짜다.
+ * @param {any[]} trades @param {'day'|'week'|'month'} unit @param {string} ccy @param {'ALL'|'FUTURES'|'SPOT'|'MARGIN'} [filter]
+ */
+export function periodTable(trades, unit, ccy, filter = 'ALL') {
+  const rows = new Map();
+  for (const t of trades) {
+    if (t.status !== 'CLOSED' || t.closeTs == null || (filter !== 'ALL' && t.instType !== filter)) continue;
+    const a = t.amounts?.[ccy];
+    if (!a) continue;
+    const day = dayKey(t.closeTs);
+    const key = unit === 'day' ? day : unit === 'week' ? weekKey(day) : day.slice(0, 7);
+    const r = rows.get(key) ?? { key, count: 0, wins: 0, losses: 0, pnl: 0, fee: 0, other: 0, net: 0 };
+    r.count++; r.pnl += a.pnl; r.fee += a.fee; r.other += a.interest + a.funding; r.net += a.net;
+    if (a.net > 0) r.wins++; else if (a.net < 0) r.losses++;
+    rows.set(key, r);
+  }
+  let cum = 0;
+  const out = [...rows.values()].sort((a, b) => a.key.localeCompare(b.key)).map((r) => ({ ...r, winRate: r.count ? r.wins / r.count : null, cum: (cum += r.net) }));
+  return { value: out, source: `${filter} ${ccy} 청산 거래(KST)`, note: unit === 'week' ? '주는 월요일 시작, key=그 주 월요일' : unit === 'month' ? 'key=YYYY-MM' : 'key=청산일' };
+}

@@ -5,7 +5,7 @@ paths:
   - "style.css"
 ---
 # 화면 규칙
-- 해시 라우팅으로 탭을 나눈다: `#/dashboard #/trades #/orders #/positions #/journal #/data #/settings`
+- 해시 라우팅으로 탭을 나눈다: `#/dashboard #/trades #/calendar #/periods #/journal #/orders #/positions #/data #/settings` (주요 탭 5개 + "더 보기" 메뉴)
 - 화면 코드에서는 `src/core` 함수만 호출한다. UI에서 손익을 계산하지 않는다.
 - 외부 스크립트를 불러오지 않는다. 차트는 `vendor/lightweight-charts.mjs`를 import한다(v4 API: `addLineSeries`, `addHistogramSeries`).
 - 키 입력란은 `type=password`로 둔다. 저장 위치는 기본 sessionStorage이고, "이 기기에 기억"을 켰을 때만 localStorage를 쓴다.

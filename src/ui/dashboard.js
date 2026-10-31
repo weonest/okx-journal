@@ -4,12 +4,28 @@ import { S } from './store.js';
 const KST_MS = 9 * 3600 * 1000;
 import { periodPnl, monthStats } from '../core/metrics.js';
 
-const ui = { filter: 'ALL', ccy: null, month: null, range: 30, grp: '상품군' };
+export const ui = { filter: 'ALL', ccy: null, month: null, range: 30, grp: '상품군' };
 const RANGES = [[null, '전체'], [7, '7일'], [30, '30일'], [90, '90일']];
 const CH = { layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' }, grid: { vertLines: { visible: false }, horzLines: { color: '#2a2f35' } }, timeScale: { borderColor: '#363c44' }, rightPriceScale: { borderColor: '#363c44' } };
 
 const seg = (items, cur, on) => h('div', { class: 'seg' }, items.map(([v, label]) => h('button', { class: v === cur ? 'on' : null, onclick: () => on(v) }, label)));
 const metaOf = (m) => ({ title: `source: ${m.source}\nnote: ${m.note}` });
+
+/** 상품군·통화 선택 바(대시보드·캘린더·정산 공용). ccys는 호출 측이 고른 상품군의 통화 목록. */
+export function filterBar(ccys, rerender) {
+  if (!ccys.includes(ui.ccy)) ui.ccy = ccys[0] ?? null;
+  const sel = (opts, cur, on) => h('select', { onchange: (e) => on(e.target.value) }, opts.map((o) => h('option', { value: o, selected: o === cur ? true : null }, o)));
+  return h('div', { class: 'row' },
+    sel(['ALL', 'FUTURES', 'SPOT', 'MARGIN'], ui.filter, (v) => { ui.filter = v; ui.ccy = null; rerender(); }),
+    ccys.length ? sel(ccys, ui.ccy, (v) => { ui.ccy = v; rerender(); }) : null);
+}
+
+export function calendarView(rerender) {
+  const r = S.result;
+  if (!r) return h('section', {}, '데이터가 없습니다.');
+  const ccys = Object.keys(r.metrics[ui.filter].daily.value);
+  return h('div', {}, filterBar(ccys, rerender), calendarSection(r, rerender));
+}
 
 export function dashboardView(rerender) {
   const r = S.result;
@@ -72,7 +88,6 @@ export function dashboardView(rerender) {
     filters, top,
     h('div', { class: 'split' }, daily, analysis),
     h('section', {}, main, more),
-    calendarSection(r, rerender),
     h('section', {}, h('div', { class: 'between' }, h('h2', {}, '구분별 성과'), seg(Object.keys(GROUPS).map((k) => [k, k]), ui.grp, (v) => { ui.grp = v; rerender(); })), groupTable(GROUPS[ui.grp]())));
 }
 

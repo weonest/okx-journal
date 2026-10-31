@@ -114,3 +114,14 @@ test('monthStats: 월 필터·일별 건수·수익 팩터·손익비', () => {
   assert.deepEqual(s.curve.map((c) => c.cum), [20, 40, 30]);
   assert.equal(monthStats([T('2026-10-05', 1)], '2026-10', 'USDT').value.profitFactor, null);
 });
+
+import { periodTable } from '../src/core/metrics.js';
+test('periodTable: 일·주(월요일 시작)·월 묶음과 누적', () => {
+  const T = (day, pnl, fee) => ({ status: 'CLOSED', instType: 'FUTURES', closeTs: Date.parse(day + 'T03:00:00Z'), amounts: { USDT: { pnl, fee, interest: 0, funding: 0, net: pnl + fee } } });
+  const ts = [T('2026-10-05', 10, -1), T('2026-10-07', -5, -1), T('2026-10-12', 20, -2), T('2026-11-01', 3, 0)]; // 10-05는 월요일
+  const w = periodTable(ts, 'week', 'USDT').value;
+  assert.deepEqual(w.map((r) => r.key), ['2026-10-05', '2026-10-12', '2026-10-26']);
+  assert.equal(w[0].count, 2); assert.equal(w[0].net, 3); assert.equal(w[0].winRate, 0.5); assert.equal(w.at(-1).cum, 3 + 18 + 3);
+  assert.equal(periodTable(ts, 'month', 'USDT').value.length, 2);
+  assert.equal(periodTable(ts, 'day', 'USDT').value.length, 4);
+});

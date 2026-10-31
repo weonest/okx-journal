@@ -53,14 +53,12 @@ function detail(t, r, rerender) {
     ...bills.map((b) => ({ ts: b.ts, kind: `Bill ${b.type ?? ''}/${b.subType ?? ''}`, px: b.px, sz: b.sz, pnl: b.pnl, fee: b.fee, ccy: b.ccy })),
     ...(t.fillIds ? fills.map((f) => ({ ts: f.ts, kind: `Fill ${f.side}`, px: f.fillPx, sz: f.fillSz, pnl: null, fee: f.fee, ccy: f.feeCcy })) : []),
   ].sort((a, b) => a.ts - b.ts);
-  const amt = Object.entries(t.amounts).map(([c, a]) => `${c}: 손익 ${fmtNum(a.pnl, 4)} / 수수료 ${fmtNum(a.fee, 4)} / 이자 ${fmtNum(a.interest, 4)} / 펀딩 ${fmtNum(a.funding, 4)} = ${fmtNum(a.net, 4)}`);
   const chartEl = h('div', { class: 'chart', style: 'height:380px' });
   const msg = h('div', { class: 'mute' }, '캔들 불러오는 중…');
   setTimeout(() => drawCandles(chartEl, msg, t, fills, bills), 0);
   return h('div', {},
     h('section', {}, h('div', { class: 'between' }, h('h2', { class: 'big' }, `${t.instId} `, h('span', { class: 'tag ' + t.side }, t.side.toUpperCase()), ` · ${t.status}`), h('div', { class: 'row' }, BAR_BTN.map(([b, label]) => h('button', { class: b === ui.bar ? null : 'sub', onclick: () => { ui.bar = b; rerender(); } }, label)))),
       msg, chartEl),
-    h('section', {}, h('div', {}, `진입 ${fmtTs(t.openTs)} → 청산 ${fmtTs(t.closeTs)} (KST) · 최대 수량 ${fmtNum(t.maxSize, 6)}${t.closeReason && t.closeReason !== 'TRADE' ? ' · ' + t.closeReason : ''}`), h('ul', {}, amt.map((a) => h('li', {}, a)))),
     journalForTrade(t.id) ?? h('section', {}, h('h2', {}, '매매일지'), h('div', { class: 'mute' }, S.journal ? '-: 이 거래에 연결된 일지 없음' : '-: 일지를 불러오지 않았습니다(#/journal에서 노션 내보내기 파일 업로드)')),
     h('details', { class: 'panel' }, h('summary', {}, '이벤트 타임라인'), ev.length ? table(['시각(KST)', '구분', '가격', '수량', '손익', '수수료', '통화'], ev.map((e) => [fmtTs(e.ts), e.kind, fmtNum(e.px, 6), fmtNum(e.sz, 6), fmtNum(e.pnl, 4), fmtNum(e.fee, 4), e.ccy ?? '-'])) : h('div', { class: 'mute' }, '-: 연결된 이벤트 없음')));
 }
