@@ -120,3 +120,14 @@ details.more .menu{position:absolute;z-index:10;top:100%;left:0;min-width:140px;
 details.more .menu a{border:0;border-radius:6px}
 details.more .menu a:hover{background:var(--panel)}
 @media(max-width:900px){header{flex-wrap:wrap}.actions{width:100%}}
+
+#market{margin-bottom:12px}
+.mkt>.between{margin-bottom:10px}
+.cards5{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:10px;margin-bottom:12px}
+.tcard{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:12px 14px;cursor:pointer;min-width:0}
+.tcard:hover{border-color:var(--acc)}
+.tcard.on{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.tk{font:600 12px var(--mono);color:var(--fg)}
+.tp{font:600 20px var(--mono);margin:4px 0}
+.tcard .between{font:11px var(--mono)}
+@media(max-width:900px){.cards5{grid-template-columns:repeat(2,minmax(0,1fr))}}

@@ -7,6 +7,7 @@ import { periodsView } from './periods.js';
 import { tradesView } from './trades.js';
 import { ordersView } from './orders.js';
 import { journalView } from './journal.js';
+import { marketPanel } from './market.js';
 import { positionsView } from './positions.js';
 
 const ROUTES = {
@@ -15,6 +16,7 @@ const ROUTES = {
 };
 const MAIN = ['dashboard', 'trades', 'calendar', 'periods', 'journal'];
 const view = document.getElementById('view');
+const market = document.getElementById('market');
 const nav = document.getElementById('nav');
 const badge = document.getElementById('badge');
 
@@ -26,6 +28,9 @@ function render() {
   nav.replaceChildren(...MAIN.map(link), h('details', { class: 'more' }, h('summary', { class: rest.includes(key) ? 'on' : null }, rest.includes(key) ? ROUTES[key][0] : '더 보기'), h('div', { class: 'menu' }, rest.map(link))));
   badge.hidden = !S.sample;
   try { view.replaceChildren(ROUTES[key][1](render)); } catch (e) { view.replaceChildren(h('section', { class: 'down' }, '화면 오류: ' + e.message)); }
+  // 뷰가 먼저 선택 거래를 정한 뒤 시세 패널을 맞춘다
+  market.hidden = !MAIN.includes(key);
+  if (!market.hidden) { const el = marketPanel(render); if (market.firstChild !== el) market.replaceChildren(el); }
 }
 addEventListener('hashchange', render);
 subscribe(render);

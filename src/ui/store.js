@@ -3,7 +3,7 @@ import { linkJournal, journalStats } from '../core/notion.js';
 import { emptyRaw, concatRaw, analyze, ingestCsv, fromApi } from '../core/pipeline.js';
 
 export const S = {
-  api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, journal: null, linked: null, jstats: null, lastSync: null, error: null,
+  api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, journal: null, linked: null, selTrade: null, jstats: null, lastSync: null, error: null,
   usdRate: null, // 환산 기준 주입 자리(8단계에서는 없음 → USD 합계 '-')
 };
 const subs = new Set();
