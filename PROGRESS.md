@@ -1,6 +1,6 @@
 # 진행 기록
 
-현재 단계: 5
+현재 단계: 6
 
 ## 0단계 (2026-10-31)
 - 한 일: package.json, .gitignore, vendor 차트 라이브러리, git init, private 저장소 weonest/okx-journal push
@@ -31,6 +31,11 @@
 - 한 일: spot.js(buildSpot: 평균단가법·코인/견적 수수료·취득가 미상·먼지·라운드트립, Bill 잔고 대사, openAvgPx 대조), tests/spot.test.js 8개(전체 통과)
 - 남은 일: CSV B(Fill)에는 side 컬럼이 없어 normalize가 side를 채우지 않음 → CSV Fill은 noSide로 빠진다. 실파일 확인 후 매핑 필요. 먼지 기준 minSz는 호출 측이 opts.dust로 전달. Bill의 tradeId·SPOT 수수료 통화 실데이터 확인
 - 주의: 라운드트립 pnl은 수수료 제외, fee는 매수수수료(매도분 몫)+매도수수료. 기초코인 수수료는 수량 차감으로 평균단가에 녹음(fee 미포함). 제3통화 수수료는 notes
+
+## 6단계 (2026-10-31) — 완료(실데이터 검증은 거래 발생 후로 이월)
+- 한 일: orders.js(buildOrders: ordId 조인·VWAP·maker/taker·불일치 목록·상품군별 상태/체결률/취소율/부분체결/시장가 비율·Bill 매칭률), tests/orders.test.js 4개(전체 통과)
+- 남은 일: CSV A/B의 state·ordType·execType 표기(maker/taker, canceled 등)와 szUnit 실파일 확인. Order fee 부호·accFillSz 단위(계약수 vs 코인) 실데이터 확인
+- 주의: 손익·수수료는 합산하지 않음(주문 단위 fee 대조만). 체결 없는 주문은 불일치에서 제외. 체결률=state filled 기준, 부분체결=체결>0 & 수량 미달 & 미완료
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
