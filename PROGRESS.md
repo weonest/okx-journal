@@ -1,6 +1,6 @@
 # 진행 기록
 
-현재 단계: 9
+현재 단계: 10
 
 ## 0단계 (2026-10-31)
 - 한 일: package.json, .gitignore, vendor 차트 라이브러리, git init, private 저장소 weonest/okx-journal push
@@ -51,6 +51,11 @@
 - 한 일: src/ui/trades.js(목록 정렬·필터, 상세 타임라인, market/history-candles 캔들+진입·청산 마커), positions.js(Position/CSV 스냅샷, SPOT 보유), orders.js(6단계 통계), app.js 라우트 연결. 전체 테스트 통과
 - 남은 일: 브라우저에서 예시 데이터로 거래 상세·캔들 표시 확인(8단계 확인 포함). vendor에 addCandlestickSeries·setMarkers(v4) 존재 여부 미확인. 캔들은 1회 100개만 조회(긴 보유는 봉이 굵어짐)
 - 주의: 미실현·노출은 선형계약 가정의 '추정'(OKX upl 필드가 Position 레코드에 없음). public/instruments는 쓰지 않고 Position.ctVal 사용. 상세에서 FUTURES 체결 연결은 Bill.tradeId 기준
+
+## 10단계 (2026-10-31) — 배포 완료, 브라우저 확인 대기
+- 한 일: 저장소 public 전환, push, GitHub Pages(main /) 활성화 → https://weonest.github.io/okx-journal/ (주요 파일 200 확인)
+- 남은 일: 배포 URL에서 예시 데이터 렌더·키 동기화 확인. OKX 개인 API의 브라우저 CORS 허용 여부 미확인(막히면 동기화는 export.js로 대체). 11단계(노션)는 선택
+- 주의: 저장소가 public이므로 커밋에 키·data 금지(.gitignore로 차단됨, 이력 스캔 시 키 패턴 없음)
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
