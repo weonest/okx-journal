@@ -8,6 +8,7 @@ const BARS = [['1m', 60e3, '1분'], ['15m', 900e3, '15분'], ['1H', 3600e3, '1�
 export const mkt = { src: 'mine', inst: null, bar: '1H' };
 const API = 'https://www.okx.com/api/v5/market/';
 const root = h('div', { class: 'mkt' });
+const chartH = () => (innerWidth < 600 ? 300 : 420);
 let lastKey = null, lastResult = null, token = 0;
 const CANDLES = new Map();
 let tickers = null, tickersAt = 0;
@@ -39,7 +40,7 @@ export function marketPanel(rerender) {
 
   const tab = (v, label) => h('button', { class: mkt.src === v ? 'on' : null, onclick: () => { mkt.src = v; mkt.inst = null; rerender(); } }, label);
   const cards = h('div', { class: 'cards5' });
-  const chartEl = h('div', { class: 'chart', style: 'height:420px' });
+  const chartEl = h('div', { class: 'chart', style: `height:${chartH()}px` });
   const msg = h('div', { class: 'mute' }, '시세 불러오는 중…');
   root.replaceChildren(
     h('div', { class: 'between' }, h('div', { class: 'mute' }, mkt.src === 'mine' ? '● 나의 최다 거래 종목' : '● OKX 거래량 상위 종목(USDT 무기한)'),
@@ -110,7 +111,7 @@ async function drawChart(my, el, msg) {
     if (!cs.length) { msg.textContent = '-: 해당 구간 캔들 없음(상장 전이거나 공개 API에 없음)'; return; }
     msg.textContent = '';
     const ch = createChart(el, {
-      width: el.clientWidth, height: 420, layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' },
+      width: el.clientWidth, height: chartH(), layout: { background: { color: '#1f2328' }, textColor: '#9aa4ab' },
       grid: { vertLines: { color: '#262b31' }, horzLines: { color: '#262b31' } }, timeScale: { timeVisible: true, rightOffset: 4, minBarSpacing: 1.5, borderColor: '#363c44' }, rightPriceScale: { borderColor: '#363c44' },
       handleScroll: { mouseWheel: false, pressedMouseMove: true, horzTouchDrag: true, vertTouchDrag: false }, handleScale: { mouseWheel: false, pinch: true, axisPressedMouseMove: true, axisDoubleClickReset: true },
     });

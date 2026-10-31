@@ -25,6 +25,7 @@ function render() {
   const key = ROUTES[name] ? name : 'dashboard';
   const link = (k) => h('a', { href: '#/' + k, class: k === key ? 'on' : null }, ROUTES[k][0]);
   nav.replaceChildren(...MAIN.map(link));
+  nav.querySelector('a.on')?.scrollIntoView({ inline: 'center', block: 'nearest' }); // 좁은 화면에서 선택 탭이 보이게
   badge.hidden = !S.sample;
   try { view.replaceChildren(ROUTES[key][1](render)); } catch (e) { view.replaceChildren(h('section', { class: 'down' }, '화면 오류: ' + e.message)); }
   // 뷰가 먼저 선택 거래를 정한 뒤 시세 패널을 맞춘다
