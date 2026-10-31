@@ -6,7 +6,8 @@ export function ordersView() {
   if (!r) return h('section', {}, '데이터가 없습니다.');
   const o = r.orders;
   const pct = (m) => h('span', { title: `source: ${m.source}\nnote: ${m.note}` }, fmtPct(m.value));
-  const rows = Object.entries(o.stats).map(([k, t]) => [k, t.total, t.filled, t.canceled, t.partial, t.maker ?? 0, t.taker ?? 0, pct(t.fillRate), pct(t.cancelRate), pct(t.marketRatio)]);
+  const pctTd = (m) => h('td', { title: `source: ${m.source}\nnote: ${m.note}` }, fmtPct(m.value));
+  const rows = Object.entries(o.stats).map(([k, t]) => [k, t.total, t.filled, t.canceled, t.partial, t.maker ?? 0, t.taker ?? 0, pctTd(t.fillRate), pctTd(t.cancelRate), pctTd(t.marketRatio)]);
   const bm = o.billMatch;
   const mm = o.mismatches.slice(0, 50).map((m) => [m.ordId ?? '-', m.field, typeof m.order === 'number' ? fmtNum(m.order, 8) : String(m.order ?? '-'), typeof m.fill === 'number' ? fmtNum(m.fill, 8) : String(m.fill ?? '-')]);
   return h('div', {},
