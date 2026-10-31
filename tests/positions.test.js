@@ -143,3 +143,12 @@ test('최종 수량을 Position과 대조', () => {
   const extra = buildPositions(rows, { openPositions: [{ posId: 'y', instId: 'ETH-USDT-261225', posSide: 'short', pos: 1 }] });
   assert.equal(extra.diffs.length, 2);
 });
+
+test('평균 진입가·청산가는 수량 가중', async () => {
+  const { buildLedger } = await import('../src/core/ledger.js');
+  const { buildPositions } = await import('../src/core/positions.js');
+  const b = (id, ts, subType, sz, px, pnl = 0) => ({ billId: id, ts, type: '2', subType, instId: 'BTC-USDT-SWAP', instType: 'FUTURES', sz, px, pnl, fee: 0, balChg: pnl, ccy: 'USDT', mgnMode: 'cross' });
+  const L = buildLedger([b('1', 1, '3', 2, 100), b('2', 2, '3', 2, 200), b('3', 3, '5', 1, 300, 5), b('4', 4, '5', 3, 400, 9)]);
+  const t = buildPositions(L.rows).trades[0];
+  assert.equal(t.avgEntryPx, 150); assert.equal(t.avgExitPx, 375);
+});

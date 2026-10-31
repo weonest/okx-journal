@@ -5,6 +5,12 @@ const near = (a, b) => Math.abs(a - b) <= Math.max(EPS, 1e-6 * Math.max(Math.abs
 
 const emptyAmt = () => ({ pnl: 0, fee: 0, interest: 0, funding: 0 });
 
+/** 수량 가중 평균가 누적(kind: 'in' 진입·증가, 'out' 감소·청산). px 없는 Bill은 건너뛴다. */
+function accPx(t, kind, sz, px) {
+  if (!(sz > 0) || px == null) return;
+  t[kind + 'Qty'] = (t[kind + 'Qty'] ?? 0) + sz; t[kind + 'Cost'] = (t[kind + 'Cost'] ?? 0) + sz * px;
+}
+
 function addAmt(t, ccy, part) {
   const c = ccy ?? '?';
   const a = (t.amounts[c] ??= emptyAmt());
@@ -13,6 +19,8 @@ function addAmt(t, ccy, part) {
 
 /** 금액 합계. 통화가 하나일 때만 평면 필드(pnl 등)를 채우고, 여럿이면 null(통화를 섞어 더하지 않는다). */
 function finalize(t) {
+  t.avgEntryPx = t.inQty > 0 ? t.inCost / t.inQty : null;
+  t.avgExitPx = t.outQty > 0 ? t.outCost / t.outQty : null;
   const ccys = Object.keys(t.amounts);
   for (const c of ccys) t.amounts[c].net = t.amounts[c].pnl + t.amounts[c].fee + t.amounts[c].interest + t.amounts[c].funding;
   if (ccys.length === 1) {
@@ -60,18 +68,19 @@ export function buildPositions(rows, opts = {}) {
       const fee = b.fee ?? 0;
       if (row.effect === 'OPEN') {
         const t = start(row, row.dirAfter, Math.abs(row.rem));
-        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee });
+        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee }); accPx(t, 'in', row.openSz, b.px);
       } else if (row.effect === 'FLIP') {
         const t = cur.get(row.key);
         const share = row.closeSz / (row.closeSz + row.openSz); // 수수료는 수량 비례로 나눈다
-        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee: fee * share });
+        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee: fee * share }); accPx(t, 'out', row.closeSz, b.px);
         close(t, row);
         const n = start(row, row.dirAfter, row.openSz);
-        n.billIds.push(b.billId); addAmt(n, b.ccy, { fee: fee * (1 - share) });
+        n.billIds.push(b.billId); addAmt(n, b.ccy, { fee: fee * (1 - share) }); accPx(n, 'in', row.openSz, b.px);
       } else {
         const t = cur.get(row.key);
         if (!t) { orphans.push({ billId: b.billId, instId: row.instId, ts: b.ts, reason: '열린 구간 없음' }); continue; }
         t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee });
+        if (row.effect === 'INCREASE') accPx(t, 'in', row.openSz, b.px); else accPx(t, 'out', row.closeSz, b.px);
         t.size = Math.abs(row.rem);
         if (t.size > t.maxSize) t.maxSize = t.size;
         if (row.effect === 'CLOSE') close(t, row);

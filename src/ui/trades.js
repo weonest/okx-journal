@@ -3,31 +3,46 @@ import { h, table, td, fmtNum, fmtTs, fmtDur, cls } from './dom.js';
 import { S } from './store.js';
 import { journalForTrade } from './journal.js';
 
-const ui = { type: 'ALL', inst: 'ALL', side: 'ALL', sort: 'closeTs', dir: -1, sel: null, bar: 'auto' };
+const ui = { type: 'ALL', inst: 'ALL', side: 'ALL', sort: 'openTs', dir: -1, sel: null, bar: 'auto', q: '' };
+
+const SORTS = { openTs: (t) => t.openTs, net: (t) => t.net, maxSize: (t) => t.maxSize, hold: (t) => (t.closeTs != null ? t.closeTs - t.openTs : null) };
 
 export function tradesView(rerender) {
   const r = S.result;
   if (!r) return h('section', {}, '데이터가 없습니다. 설정에서 동기화하거나 CSV를 올리세요.');
-  if (ui.sel) {
-    const t = r.trades.find((x) => x.id === ui.sel);
-    if (t) return detail(t, r, rerender);
-    ui.sel = null;
-  }
+  if (!r.trades.length) return h('section', {}, '거래 없음: 복원된 라운드트립이 0건입니다.');
   const sel = (opts, cur, on) => h('select', { onchange: (e) => { on(e.target.value); rerender(); } }, opts.map((o) => h('option', { value: o, selected: o === cur ? true : null }, o)));
-  const insts = ['ALL', ...new Set(r.trades.map((t) => t.instId))];
-  let list = r.trades.filter((t) => (ui.type === 'ALL' || t.instType === ui.type) && (ui.inst === 'ALL' || t.instId === ui.inst) && (ui.side === 'ALL' || t.side === ui.side));
-  const val = (t) => (ui.sort === 'net' ? t.net : ui.sort === 'hold' ? (t.closeTs != null ? t.closeTs - t.openTs : null) : t[ui.sort]);
-  list = [...list].sort((a, b) => ((val(a) ?? -Infinity) - (val(b) ?? -Infinity)) * ui.dir);
-  const th = (label, key) => h('button', { class: 'sub', onclick: () => { ui.dir = ui.sort === key ? -ui.dir : -1; ui.sort = key; rerender(); } }, label + (ui.sort === key ? (ui.dir < 0 ? ' ▼' : ' ▲') : ''));
-  const rows = list.map((t) => [
-    h('td', {}, h('a', { href: '#/trades', onclick: (e) => { e.preventDefault(); ui.sel = t.id; rerender(); } }, t.instId)),
-    h('td', {}, h('span', { class: 'tag sym' }, t.instType)), h('td', {}, h('span', { class: 'tag ' + t.side }, t.side.toUpperCase())), fmtTs(t.openTs), fmtTs(t.closeTs), t.closeTs != null ? fmtDur(t.closeTs - t.openTs) : '-',
-    td(t.ccy ? fmtNum(t.net) + ' ' + t.ccy : '통화 여럿', cls(t.net)), t.status,
-  ]);
+  const jOf = (t) => S.linked?.byTrade.get(t.id) ?? [];
+  const q = ui.q.trim().toLowerCase();
+  let list = r.trades.filter((t) => (ui.type === 'ALL' || t.instType === ui.type) && (ui.inst === 'ALL' || t.instId === ui.inst) && (ui.side === 'ALL' || t.side === ui.side)
+    && (!q || [t.instId, t.side, ...jOf(t).flatMap((e) => [e.title, ...e.strategies, ...e.mistakes, e.grade])].some((x) => String(x ?? '').toLowerCase().includes(q))));
+  const key = SORTS[ui.sort] ?? SORTS.openTs;
+  list = [...list].sort((a, b) => ((key(a) ?? -Infinity) - (key(b) ?? -Infinity)) * ui.dir);
+
+  let t = r.trades.find((x) => x.id === ui.sel);
+  if (!t) t = list[0] ?? r.trades.at(-1);
+
+  const th = (label, k) => h('th', { class: 'sortable', onclick: () => { ui.dir = ui.sort === k ? -ui.dir : -1; ui.sort = k; rerender(); } }, label + (ui.sort === k ? (ui.dir < 0 ? ' ▼' : ' ▲') : ''));
+  const chips = (a) => (a.length ? h('td', {}, a.map((x) => h('span', { class: 'tag sym' }, x)), ' ') : td('-'));
+  const rows = list.map((x) => {
+    const js = jOf(x);
+    const tr = h('tr', { class: x.id === t.id ? 'on' : null, onclick: () => { ui.sel = x.id; rerender(); scrollTo({ top: 0, behavior: 'smooth' }); } },
+      td(fmtTs(x.openTs)), td(x.instId), h('td', {}, h('span', { class: 'tag ' + x.side }, x.side.toUpperCase())), td(fmtNum(x.maxSize, 6)),
+      td(x.ccy ? fmtNum(x.net) + ' ' + x.ccy : '통화 여럿', cls(x.net)), td(fmtNum(x.avgEntryPx, 6)), td(x.status === 'CLOSED' ? fmtNum(x.avgExitPx, 6) : '-'),
+      chips([...new Set(js.flatMap((e) => e.strategies))]), chips([...new Set(js.flatMap((e) => e.mistakes))]), td(js.map((e) => e.grade).filter(Boolean).join(', ') || '-'));
+    return tr;
+  });
+  const search = h('input', { id: 'tq', type: 'search', placeholder: '검색 (종목·전략·실수·제목)', value: ui.q });
+  search.oninput = () => { ui.q = search.value; rerender(); const n = document.getElementById('tq'); n?.focus(); n?.setSelectionRange(ui.q.length, ui.q.length); };
+
   return h('div', {},
-    h('div', { class: 'row' }, sel(['ALL', 'FUTURES', 'SPOT', 'MARGIN'], ui.type, (v) => (ui.type = v)), sel(insts, ui.inst, (v) => (ui.inst = v)), sel(['ALL', 'long', 'short'], ui.side, (v) => (ui.side = v))),
-    h('div', { class: 'row' }, th('청산시각', 'closeTs'), th('진입시각', 'openTs'), th('순손익', 'net'), th('보유', 'hold')),
-    h('section', {}, h('div', { class: 'mute' }, `${list.length}건`), table(['종목', '상품', '방향', '진입(KST)', '청산(KST)', '보유', '순손익', '상태'], rows)));
+    detail(t, r, rerender),
+    h('section', {},
+      h('div', { class: 'between' }, search, h('div', { class: 'row' }, sel(['ALL', 'FUTURES', 'SPOT', 'MARGIN'], ui.type, (v) => (ui.type = v)), sel(['ALL', ...new Set(r.trades.map((x) => x.instId))], ui.inst, (v) => (ui.inst = v)), sel(['ALL', 'long', 'short'], ui.side, (v) => (ui.side = v)))),
+      h('div', { class: 'mute' }, `${list.length}건 · 행을 누르면 위 차트와 일지가 바뀝니다. 평균 진입·청산가는 선물·마진만(현물은 -).`),
+      h('div', { class: 'tbl' }, h('table', { class: 'clickable' },
+        h('thead', {}, h('tr', {}, th('매매일(KST)', 'openTs'), h('th', {}, '종목'), h('th', {}, 'SIDE'), th('최대 수량', 'maxSize'), th('순 손익', 'net'), h('th', {}, '평균 진입가'), h('th', {}, '평균 청산가'), h('th', {}, '전략'), h('th', {}, '실수'), h('th', {}, '등급'))),
+        h('tbody', {}, rows)))));
 }
 
 function detail(t, r, rerender) {
@@ -43,14 +58,14 @@ function detail(t, r, rerender) {
   const msg = h('div', { class: 'mute' }, '캔들 불러오는 중…');
   setTimeout(() => drawCandles(chartEl, msg, t, fills, bills), 0);
   return h('div', {},
-    h('div', { class: 'row' }, h('button', { class: 'sub', onclick: () => { ui.sel = null; rerender(); } }, '◀ 목록'), h('strong', {}, `${t.instId} ${t.side} · ${t.status}`)),
+    h('section', {}, h('div', { class: 'between' }, h('h2', { class: 'big' }, `${t.instId} `, h('span', { class: 'tag ' + t.side }, t.side.toUpperCase()), ` · ${t.status}`), h('div', { class: 'row' }, BAR_BTN.map(([b, label]) => h('button', { class: b === ui.bar ? null : 'sub', onclick: () => { ui.bar = b; rerender(); } }, label)))),
+      msg, chartEl),
     h('section', {}, h('div', {}, `진입 ${fmtTs(t.openTs)} → 청산 ${fmtTs(t.closeTs)} (KST) · 최대 수량 ${fmtNum(t.maxSize, 6)}${t.closeReason && t.closeReason !== 'TRADE' ? ' · ' + t.closeReason : ''}`), h('ul', {}, amt.map((a) => h('li', {}, a)))),
-    h('section', {}, h('h2', {}, '캔들 (공개 API market/history-candles)'),
-      h('div', { class: 'row' }, BAR_BTN.map(([b, label]) => h('button', { class: b === ui.bar ? null : 'sub', onclick: () => { ui.bar = b; rerender(); } }, label))), msg, chartEl),
-    journalForTrade(t.id),
-    h('section', {}, h('h2', {}, '이벤트 타임라인'), ev.length ? table(['시각(KST)', '구분', '가격', '수량', '손익', '수수료', '통화'], ev.map((e) => [fmtTs(e.ts), e.kind, fmtNum(e.px, 6), fmtNum(e.sz, 6), fmtNum(e.pnl, 4), fmtNum(e.fee, 4), e.ccy ?? '-'])) : h('div', { class: 'mute' }, '-: 연결된 이벤트 없음')));
+    journalForTrade(t.id) ?? h('section', {}, h('h2', {}, '매매일지'), h('div', { class: 'mute' }, S.journal ? '-: 이 거래에 연결된 일지 없음' : '-: 일지를 불러오지 않았습니다(#/journal에서 노션 내보내기 파일 업로드)')),
+    h('details', { class: 'panel' }, h('summary', {}, '이벤트 타임라인'), ev.length ? table(['시각(KST)', '구분', '가격', '수량', '손익', '수수료', '통화'], ev.map((e) => [fmtTs(e.ts), e.kind, fmtNum(e.px, 6), fmtNum(e.sz, 6), fmtNum(e.pnl, 4), fmtNum(e.fee, 4), e.ccy ?? '-'])) : h('div', { class: 'mute' }, '-: 연결된 이벤트 없음')));
 }
 
+const CANDLES = new Map(); // 같은 구간 재조회 방지(검색 입력으로 다시 그릴 때마다 요청하지 않는다)
 const BARS = [['1m', 60e3], ['5m', 300e3], ['15m', 900e3], ['1H', 3600e3], ['4H', 14400e3], ['1D', 86400e3], ['1W', 604800e3]];
 const BAR_BTN = [['auto', '자동'], ['1m', '1분'], ['15m', '15분'], ['4H', '4시간'], ['1D', '일'], ['1W', '주']];
 
@@ -60,9 +75,10 @@ async function drawCandles(el, msg, t, fills, bills) {
     const [bar, ms] = (ui.bar !== 'auto' && BARS.find(([b]) => b === ui.bar)) || BARS.find(([, m]) => span / m <= 40) || BARS.at(-1);
     const pad = Math.max(ms * 20, span * 0.3);
     const from = t.openTs - pad, to = end + pad;
-    const all = new Map();
+    const ck = `${t.instId}|${bar}|${Math.round(from / ms)}|${Math.round(to / ms)}`;
+    const all = new Map(CANDLES.get(ck) ?? []);
     let after = Math.ceil(to);
-    for (let page = 0; page < 12; page++) { // 한 번에 100개씩, from까지 거슬러 올라간다
+    for (let page = 0; page < 12 && !CANDLES.has(ck); page++) { // 한 번에 100개씩, from까지 거슬러 올라간다
       const j = await (await fetch(`https://www.okx.com/api/v5/market/history-candles?instId=${encodeURIComponent(t.instId)}&bar=${bar}&after=${after}&limit=100`)).json();
       if (j.code !== '0') throw new Error(j.msg || 'code ' + j.code);
       if (!j.data.length) break;
@@ -71,6 +87,7 @@ async function drawCandles(el, msg, t, fills, bills) {
       if (oldest <= from) break;
       after = oldest;
     }
+    CANDLES.set(ck, [...all]);
     const cs = [...all.values()].map((c) => ({ time: Math.floor(+c[0] / 1000), open: +c[1], high: +c[2], low: +c[3], close: +c[4] })).filter((c) => c.time * 1000 >= from).sort((a, b) => a.time - b.time);
     if (!cs.length) { msg.textContent = '-: 해당 구간 캔들 없음'; return; }
     msg.textContent = `봉 ${bar} · ${cs.length}개`;
