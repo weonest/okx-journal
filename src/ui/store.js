@@ -53,6 +53,16 @@ export async function loadSample() {
   S.api = null; S.csv = raw; S.csvInfo = info; S.sample = true; recompute();
 }
 
+/** 예시 데이터 켜기/끄기. 끌 때 저장된 실제 데이터(기억 중이면)는 건드리지 않고 되살린다. */
+export async function toggleSample() {
+  if (!S.sample) return loadSample();
+  noPersist = true; // 비운 상태가 저장분을 덮어쓰지 않게 한다
+  S.journal = null; S.api = null; S.csv = emptyRaw(); S.csvInfo = []; S.sample = false; S.selTrade = null; S.lastSync = Number(load('lastSync')) || null;
+  recompute();
+  noPersist = false;
+  await restore();
+}
+
 export function clearData() { idbDel(); S.journal = null; S.api = null; S.csv = emptyRaw(); S.csvInfo = []; S.sample = false; recompute(); }
 
 // --- 저장소 (키 값은 어디에도 출력하지 않는다) ---
@@ -77,8 +87,9 @@ export function setRemember(on) {
 const idb = () => new Promise((res, rej) => { const r = indexedDB.open('okx-journal', 1); r.onupgradeneeded = () => r.result.createObjectStore('kv'); r.onsuccess = () => res(r.result); r.onerror = () => rej(r.error); });
 const tx = async (mode, f) => { const db = await idb(); return new Promise((res, rej) => { const t = db.transaction('kv', mode); const out = f(t.objectStore('kv')); t.oncomplete = () => res(out.result); t.onerror = () => rej(t.error); }); };
 function idbDel() { tx('readwrite', (st) => st.delete('data')).catch(() => {}); }
+let noPersist = false;
 function persist() {
-  if (!isRemembering() || S.sample) return;
+  if (noPersist || !isRemembering() || S.sample) return;
   const snap = { api: S.api, csv: S.csv, csvInfo: S.csvInfo, journal: S.journal, lastSync: S.lastSync };
   tx('readwrite', (st) => st.put(snap, 'data')).catch(() => {});
 }

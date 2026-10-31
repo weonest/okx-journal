@@ -1,5 +1,5 @@
 import { h, icon } from './dom.js';
-import { S, subscribe, addCsv, loadSample, restore } from './store.js';
+import { S, subscribe, addCsv, toggleSample, restore } from './store.js';
 import { settingsView } from './settings.js';
 import { dataView } from './data.js';
 import { dashboardView, calendarView } from './dashboard.js';
@@ -27,23 +27,32 @@ function render() {
   nav.replaceChildren(...MAIN.map(link));
   nav.querySelector('a.on')?.scrollIntoView({ inline: 'center', block: 'nearest' }); // 좁은 화면에서 선택 탭이 보이게
   badge.hidden = !S.sample;
+  syncSampleBtn();
   try { view.replaceChildren(ROUTES[key][1](render)); } catch (e) { view.replaceChildren(h('section', { class: 'down' }, '화면 오류: ' + e.message)); }
   // 뷰가 먼저 선택 거래를 정한 뒤 시세 패널을 맞춘다
   market.hidden = !MAIN.includes(key);
   if (!market.hidden) { const el = marketPanel(render); if (market.firstChild !== el) market.replaceChildren(el); }
 }
 addEventListener('hashchange', render);
-subscribe(render);
-render();
-restore(); // 저장된 데이터가 있으면 복원(복원되면 subscribe로 다시 그려진다)
 
 // 헤더 오른쪽: 동기화(설정) · CSV 업로드 · 예시 데이터 · 사용자 메뉴(나머지 화면)
 const pick = h('input', { type: 'file', accept: '.csv,text/csv', multiple: true, hidden: true });
 pick.onchange = async () => { await addCsv(pick.files); pick.value = ''; };
 const REST = ['journal', 'orders', 'positions', 'data', 'settings'];
 const userMenu = h('details', { class: 'user' }, h('summary', {}, icon('user', 18)), h('div', { class: 'menu' }, REST.map((k) => h('a', { href: '#/' + k, onclick: () => userMenu.removeAttribute('open') }, ROUTES[k][0]))));
+const sampleLabel = h('span', {}, '예시 데이터');
+const sampleBtn = h('button', { class: 'pill ghost', onclick: async () => { await toggleSample(); if (!MAIN.includes((location.hash.match(/^#\/(\w+)/) ?? [])[1])) location.hash = '#/dashboard'; } }, icon('flask', 17), sampleLabel);
+function syncSampleBtn() {
+  sampleBtn.classList.toggle('active', S.sample);
+  sampleLabel.textContent = S.sample ? '예시 끄기' : '예시 데이터';
+  sampleBtn.title = S.sample ? '예시 데이터를 끄고 원래 데이터로 돌아갑니다' : '합성 예시 데이터를 불러옵니다(다시 누르면 끕니다)';
+}
 document.getElementById('actions').replaceChildren(pick,
   h('button', { class: 'round', title: '동기화(설정으로 이동)', onclick: () => { location.hash = '#/settings'; } }, icon('refresh', 18)),
   h('button', { class: 'pill', onclick: () => pick.click() }, icon('upload', 17), 'CSV 파일 업로드'),
-  h('button', { class: 'pill ghost', title: '합성 예시 데이터를 불러옵니다(새로고침하면 사라집니다)', onclick: async () => { await loadSample(); if (!MAIN.includes((location.hash.match(/^#\/(\w+)/) ?? [])[1])) location.hash = '#/dashboard'; } }, icon('flask', 17), '예시 데이터'),
+  sampleBtn,
   userMenu);
+
+subscribe(render);
+render();
+restore(); // 저장된 데이터가 있으면 복원(복원되면 subscribe로 다시 그려진다)

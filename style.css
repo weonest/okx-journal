@@ -272,3 +272,4 @@ button,.tcard,table.notion tbody tr,.seg button{-webkit-tap-highlight-color:tran
   .psv{font-size:18px}
   footer.foot{flex-direction:column;gap:4px}
 }
+button.pill.ghost.active{background:var(--acc);color:#04150d;border-color:var(--acc)}
