@@ -1,0 +1,3 @@
+instType,billId,subType,ts,balChg,posBalChg,bal,posBal,sz,px,ccy,pnl,fee,mgnMode,instId,ordId,execType,interest
+SWAP,E1,1,1767340800000,-1.5,2,998.5,2,2,50000,USDT,0,-1.5,cross,BTC-USDT-SWAP,1001,T,
+MARGIN,E2,2,1767344400000,3,,1001.5,,1,51000,USDT,3,0,cross,BTC-USDT,1003,M,0.01

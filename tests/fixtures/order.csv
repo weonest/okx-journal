@@ -1,0 +1,6 @@
+﻿Exchange,OKX,UID,0000,Period,2026-01-01~2026-01-31,Timezone,UTC+8
+Order ID,Order Time,Instrument,Symbol,Lvg,Side,Order Type,Order Amount,Filled Amount,Amount Unit,Order Price,Avg. Filled Price,Price Unit,PNL,Fee,Fee Unit,Status,Bot ID
+1001,2026-01-02 09:00:00,Perpetual Futures,BTC-USDT-SWAP,10,Open long,Market,2,2,Cont,--,50000,USDT,0,-1.5,USDT,Filled,
+1002,2026-01-02 10:00:00,Spot,"ETH,USDT",1,Buy,Limit,1,0,ETH,3000,--,USDT,0,0,ETH,Canceled,
+1002,2026-01-02 10:00:00,Spot,"ETH,USDT",1,Buy,Limit,1,0,ETH,3000,--,USDT,0,0,ETH,Canceled,
+1003,2026-01-03 11:30:00,Margin,BTC-USDT,3,Close short,Limit,1,0.5,BTC,51000,51000,USDT,12,-0.1,USDT,Partially filled,bot7

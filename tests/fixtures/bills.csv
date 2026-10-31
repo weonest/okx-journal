@@ -1,0 +1,4 @@
+Exchange,OKX,UID,0000,Timezone,UTC+8
+id,Order id,Time,Trade Type,Symbol,Action,Amount,Trading Unit,Filled Price,PnL,Fee,Fee Unit,Position Change,Position Balance,Balance Change,Balance,Balance Unit,Filled_price-USD,Pnl-USD,Fee-USD,Balance-USD,Balance_change-USD
+B1,1001,2026-01-02 09:00:01,Futures,BTC-USDT-SWAP,Open long,2,Cont,50000,0,-1.5,USDT,2,2,-1.5,998.5,USDT,50000,0,-1.5,998.5,-1.5
+B2,,2026-01-02 09:05:00,Futures,BTC-USDT-SWAP,Funding fee,--,--,--,0,0,USDT,--,--,-0.2,998.3,USDT,--,--,--,998.3,-0.2

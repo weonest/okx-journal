@@ -1,0 +1,3 @@
+Exchange,OKX,UID,0000,Timezone,UTC+8
+Position ID,Position Create Time,Position Update Time,Business Line,Index,Instrument Name,Margin Mode,Direction,Leverage,Position size,Margin Amount,Margin Currency,Assets amount,Liability amount,Asset currency,Liability currency,Average Open Price,Mark Price,Contract Face Value,Contract Face Value Currency,Contract Multiplier,Snapshot time
+P1,2026-01-02 09:00:01,2026-01-02 09:00:01,Futures,BTC-USDT,BTC-USDT-SWAP,cross,long,10,2,100,USDT,,,,,50000,50100,0.01,BTC,1,2026-01-02 10:00:00

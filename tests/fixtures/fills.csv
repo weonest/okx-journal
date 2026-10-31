@@ -1,0 +1,5 @@
+Exchange,OKX,UID,0000,Timezone,UTC+8
+Trade ID,Order ID,Trade Time,Instrument,Symbol,Filled Amount,Filled Amount Unit,Filled Price,Fill Price Unit,Trading Volume,Trading Volume Unit,taker/maker,Fee,Fee Unit
+T1,1001,2026-01-02 09:00:01,Futures,BTC-USDT-SWAP,2,Cont,50000,USDT,1000,USDT,Taker,-1.5,USDT
+T2,2001,2026-01-02 12:00:00,Spot,ETH-USDT,0.5,ETH,3000,USDT,1500,USDT,Maker,-0.0005,ETH
+T2,2001,2026-01-02 12:00:00,Spot,ETH-USDT,0.5,ETH,3000,USDT,1500,USDT,Maker,-0.0005,ETH
