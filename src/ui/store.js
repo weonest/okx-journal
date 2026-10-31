@@ -1,0 +1,51 @@
+// 화면 상태. 키는 기본 sessionStorage, "이 기기에 기억"을 켠 때만 localStorage.
+import { emptyRaw, concatRaw, analyze, ingestCsv, fromApi } from '../core/pipeline.js';
+
+export const S = {
+  api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, lastSync: null, error: null,
+  usdRate: null, // 환산 기준 주입 자리(8단계에서는 없음 → USD 합계 '-')
+};
+const subs = new Set();
+export const subscribe = (f) => (subs.add(f), () => subs.delete(f));
+
+export function recompute() {
+  try {
+    S.result = analyze(concatRaw(S.api ?? emptyRaw(), S.csv), { usdRate: S.usdRate ?? undefined });
+    S.error = null;
+  } catch (e) { S.result = null; S.error = e.message; }
+  subs.forEach((f) => f());
+}
+
+export function setApi(out) { S.api = fromApi(out); S.lastSync = Date.now(); S.sample = false; save('lastSync', String(S.lastSync), true); recompute(); }
+
+export async function addCsv(files) {
+  const list = await Promise.all([...files].map(async (f) => ({ name: f.name, text: await f.text() })));
+  const subtypes = S.api?.subtypes?.length ? S.api.subtypes : await loadSubtypes();
+  const { raw, info } = ingestCsv(list, { subtypes });
+  S.csv = concatRaw(S.csv, raw); S.csvInfo.push(...info); S.sample = false; recompute();
+}
+
+async function loadSubtypes() {
+  try { const r = await fetch('docs/subtypes.json'); return r.ok ? await r.json() : []; } catch { return []; }
+}
+
+export async function loadSample() {
+  const names = ['order.csv', 'fills.csv', 'bills.csv', 'pos.csv', 'archive.csv'];
+  const list = await Promise.all(names.map(async (name) => ({ name, text: await (await fetch('tests/fixtures/' + name)).text() })));
+  const { raw, info } = ingestCsv(list, { subtypes: await loadSubtypes() });
+  S.api = null; S.csv = raw; S.csvInfo = info; S.sample = true; recompute();
+}
+
+export function clearData() { S.api = null; S.csv = emptyRaw(); S.csvInfo = []; S.sample = false; recompute(); }
+
+// --- 저장소 (키 값은 어디에도 출력하지 않는다) ---
+const safe = (f) => { try { return f(); } catch { return null; } };
+export function save(name, val, local) { safe(() => (local ? localStorage : sessionStorage).setItem('okx.' + name, val)); }
+export function load(name) { return safe(() => sessionStorage.getItem('okx.' + name) ?? localStorage.getItem('okx.' + name)); }
+export function loadKeys() { const j = load('keys'); try { return j ? JSON.parse(j) : null; } catch { return null; } }
+export function saveKeys(k, remember) {
+  safe(() => { sessionStorage.removeItem('okx.keys'); localStorage.removeItem('okx.keys'); });
+  save('keys', JSON.stringify(k), remember);
+}
+export function clearKeys() { safe(() => { sessionStorage.removeItem('okx.keys'); localStorage.removeItem('okx.keys'); }); }
+S.lastSync = Number(load('lastSync')) || null;

@@ -1,0 +1,36 @@
+:root{--bg:#0e1116;--panel:#171b22;--line:#262c36;--fg:#e6e9ee;--mute:#8b94a3;--up:#2ebd85;--down:#f6465d;--acc:#4c8dff;--warn:#e0a526}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--fg);font:14px/1.5 system-ui,-apple-system,"Apple SD Gothic Neo",sans-serif;overflow-x:hidden}
+header{display:flex;flex-wrap:wrap;align-items:center;gap:8px 12px;padding:10px 12px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+nav{display:flex;flex-wrap:wrap;gap:4px;width:100%}
+nav a{color:var(--mute);text-decoration:none;padding:4px 10px;border-radius:6px}
+nav a.on{background:var(--panel);color:var(--fg)}
+main{padding:12px;max-width:1100px;margin:0 auto}
+h2{font-size:16px;margin:18px 0 8px}
+section{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;margin-bottom:12px}
+.badge{background:var(--warn);color:#000;border-radius:999px;padding:1px 10px;font-size:12px;font-weight:600}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:8px}
+.card{background:var(--bg);border:1px solid var(--line);border-radius:8px;padding:8px 10px;min-width:0}
+.card .k{color:var(--mute);font-size:12px}
+.card .v{font-size:18px;font-weight:600;overflow-wrap:anywhere}
+.card .n{color:var(--mute);font-size:11px;overflow-wrap:anywhere}
+.up{color:var(--up)}.down{color:var(--down)}.mute{color:var(--mute)}.warn{color:var(--warn)}
+input,select,button{background:var(--bg);color:var(--fg);border:1px solid var(--line);border-radius:6px;padding:6px 8px;font:inherit;max-width:100%}
+button{cursor:pointer;background:var(--acc);border-color:var(--acc);color:#fff}
+button.sub{background:var(--bg);color:var(--fg);border-color:var(--line)}
+button:disabled{opacity:.5;cursor:default}
+label{display:block;margin:6px 0 2px;color:var(--mute);font-size:12px}
+.row{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:6px 0}
+.tbl{overflow-x:auto}
+table{border-collapse:collapse;width:100%}
+th,td{border-bottom:1px solid var(--line);padding:4px 8px;text-align:right;white-space:nowrap}
+th:first-child,td:first-child{text-align:left}
+th{color:var(--mute);font-weight:500;font-size:12px}
+.drop{border:2px dashed var(--line);border-radius:10px;padding:18px;text-align:center;color:var(--mute)}
+.drop.over{border-color:var(--acc);color:var(--fg)}
+.chart{height:220px;width:100%}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:3px}
+.cal div{background:var(--bg);border:1px solid var(--line);border-radius:4px;min-height:44px;padding:2px 4px;font-size:11px;overflow:hidden}
+.cal .h{min-height:0;border:0;text-align:center;color:var(--mute)}
+.log{font:12px ui-monospace,monospace;white-space:pre-wrap;color:var(--mute);max-height:160px;overflow:auto}
+ul{margin:4px 0;padding-left:18px}

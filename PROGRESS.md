@@ -1,6 +1,6 @@
 # 진행 기록
 
-현재 단계: 7
+현재 단계: 8
 
 ## 0단계 (2026-10-31)
 - 한 일: package.json, .gitignore, vendor 차트 라이브러리, git init, private 저장소 weonest/okx-journal push
@@ -41,6 +41,11 @@
 - 한 일: metrics.js(buildMetrics: 상품군 필터·통화별 합계·승률/평균/손익비·일별 KST 누적·누적 MDD·보유시간·롱숏·레버리지·최대 노출·일 빈도), tests/metrics.test.js 5개(전체 통과)
 - 남은 일: USD 합계는 opts.usdRate(ccy,ts,trade)→{rate,basis}를 호출 측이 주입(CSV C *-USD → fillIdxPx → 캔들 종가 순서는 8단계 조립부에서). 레버리지는 trade.lever, 최대 노출은 opts.notionalOf 필요 — trade에 lever·ctVal 전파는 미구현. 잔고 기준 MDD 미구현
 - 주의: 통화 여럿인 거래는 승/패에서 제외(note 표시). 승률 분모는 무승부 포함, 손익비=평균이익/|평균손실|. MDD는 0에서 시작한 누적 순손익 기준
+
+## 8단계 (2026-10-31) — 코드 완료, 브라우저 확인 대기
+- 한 일: core/pipeline.js(CSV·API→병합→분석, tests/pipeline.test.js), index.html·style.css, src/ui/(app·store·dom·settings·data·dashboard). 전체 테스트 통과
+- 남은 일: 사용자가 `npx --yes http-server -c-1 -p 8080`로 예시 데이터·모든 탭 렌더, 실제 키 동기화 건수가 export와 일치하는지 확인. vendor의 createChart export명과 브라우저 CORS(OKX 개인 API 직접 호출 가능 여부) 미확인. 동기화 결과는 새로고침 시 사라짐(증분 저장 없음)
+- 주의: USD 합계는 usdRate 미주입이라 '-'. 9단계 탭(거래·주문·포지션)과 journal은 자리표시
 
 <!-- 단계가 끝날 때마다 아래 형식으로 3줄 추가 -->
 <!--
