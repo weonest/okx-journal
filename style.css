@@ -190,3 +190,24 @@ table.notion tbody tr.on .c0{color:var(--acc)}
 .ib2.gold{background:rgba(224,165,38,.12);color:var(--warn);border-color:rgba(224,165,38,.3)}
 .card .v.up{color:var(--up)}.card .v.down{color:var(--down)}.card .v.gold{color:var(--warn)}
 .grid:has(.kpi){grid-template-columns:repeat(auto-fit,minmax(220px,1fr));margin-bottom:12px}
+
+select{appearance:none;-webkit-appearance:none;background:var(--bg) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%239aa4ab' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E") no-repeat right 10px center;padding:8px 34px 8px 12px;border-radius:10px;min-width:96px;cursor:pointer;font-size:14px}
+select:hover{border-color:var(--acc)}
+select option{background:var(--panel2);color:var(--fg)}
+.jcard{padding:16px 20px}
+.jentry{border-top:1px solid var(--line);padding:14px 0}.jentry:first-of-type{border-top:0}
+.jt{margin:0;font-size:17px}.small{font-size:12px}
+.jtags{display:flex;flex-wrap:wrap;gap:6px 8px;align-items:center;margin:10px 0}
+.jk{color:var(--mute);font-size:12px;margin-right:2px}
+.chip{display:inline-block;padding:2px 10px;border-radius:999px;font-size:12px;font-weight:600}
+.chip.blue{background:rgba(76,141,255,.15);color:#7fb0ff}.chip.red{background:rgba(240,97,109,.15);color:var(--down)}
+.grade{padding:2px 10px;border-radius:6px;font-size:12px;font-weight:700;background:var(--panel2)}
+.g-a{background:rgba(62,207,142,.18);color:var(--up)}.g-b{background:rgba(76,141,255,.18);color:#7fb0ff}.g-c{background:rgba(224,165,38,.18);color:var(--warn)}.g-d{background:rgba(240,97,109,.18);color:var(--down)}
+.jbody{background:var(--bg);border:1px solid var(--line);border-radius:10px;padding:12px 16px}
+.jh{margin:10px 0 4px;font-size:14px;color:var(--fg)}.jh:first-child{margin-top:0}
+.jp{margin:4px 0;color:var(--fg)}
+ul.jl{list-style:none;margin:4px 0;padding:0}ul.jl li{padding:2px 0 2px 16px;position:relative}
+ul.jl li::before{content:'';position:absolute;left:3px;top:11px;width:5px;height:5px;border-radius:50%;background:var(--mute)}
+ul.jl li:has(.chk)::before{display:none}ul.jl li:has(.chk){padding-left:0}
+.chk{display:inline-grid;place-items:center;width:15px;height:15px;border:1px solid var(--mute);border-radius:4px;margin-right:8px;vertical-align:-2px;font-size:11px;line-height:1}
+.chk.done{background:var(--acc);border-color:var(--acc);color:#04150d}

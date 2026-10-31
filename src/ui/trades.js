@@ -109,7 +109,6 @@ function detail(t, r) {
     ...(t.fillIds ? fills.map((f) => ({ ts: f.ts, kind: `Fill ${f.side}`, px: f.fillPx, sz: f.fillSz, pnl: null, fee: f.fee, ccy: f.feeCcy })) : []),
   ].sort((a, b) => a.ts - b.ts);
   return h('div', {},
-    h('section', {}, h('div', { class: 'between' }, h('h2', { class: 'big' }, `${t.instId} `, h('span', { class: 'tag ' + t.side }, t.side.toUpperCase()), ` · ${t.status}`), h('span', { class: 'mute' }, `${fmtTs(t.openTs)} → ${fmtTs(t.closeTs)} (KST)`))),
     journalForTrade(t.id) ?? h('section', {}, h('h2', {}, '매매일지'), h('div', { class: 'mute' }, S.journal ? '-: 이 거래에 연결된 일지 없음' : '-: 일지를 불러오지 않았습니다(#/journal에서 노션 내보내기 파일 업로드)')),
     h('details', { class: 'panel' }, h('summary', {}, '이벤트 타임라인'), ev.length ? table(['시각(KST)', '구분', '가격', '수량', '손익', '수수료', '통화'], ev.map((e) => [fmtTs(e.ts), e.kind, fmtNum(e.px, 6), fmtNum(e.sz, 6), fmtNum(e.pnl, 4), fmtNum(e.fee, 4), e.ccy ?? '-'])) : h('div', { class: 'mute' }, '-: 연결된 이벤트 없음')));
 }

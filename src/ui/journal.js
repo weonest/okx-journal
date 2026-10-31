@@ -37,12 +37,37 @@ export function journalView() {
     h('section', {}, h('h2', {}, '일지 목록'), table(['날짜(KST)', '종목', '방향', '전략', '실수', '등급', '연결된 거래', '연결 근거/사유'], rows)));
 }
 
+/** 노션 본문 줄(내보내기 형식) → 읽기 좋은 블록. # 제목, - 목록, [ ]/[x] 체크, 나머지는 문단. */
+function renderBody(lines) {
+  const out = []; let ul = null;
+  for (const l of lines) {
+    const li = /^- (.*)/.exec(l), todo = /^\[( |x)\] (.*)/.exec(l), hd = /^# (.*)/.exec(l);
+    if (li || todo) {
+      if (!ul) { ul = h('ul', { class: 'jl' }); out.push(ul); }
+      ul.append(h('li', {}, todo ? h('span', { class: 'chk' + (todo[1] === 'x' ? ' done' : '') }, todo[1] === 'x' ? '✓' : '') : null, todo ? todo[2] : li[1]));
+    } else { ul = null; out.push(hd ? h('h4', { class: 'jh' }, hd[1]) : h('p', { class: 'jp' }, l)); }
+  }
+  return out;
+}
+const GRADE = { A: 'g-a', B: 'g-b', C: 'g-c', D: 'g-d' };
+
 /** 거래 상세용: 연결된 일지 항목(제목·태그·본문). 없으면 null. */
 export function journalForTrade(tradeId) {
   const es = S.linked?.byTrade.get(tradeId);
   if (!es?.length) return null;
-  return h('section', {}, h('h2', {}, '매매일지 (노션)'), es.map((e) => h('div', {},
-    h('div', {}, h('strong', {}, e.title ?? '(제목 없음)'), e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener' }, ' 노션에서 열기') : null),
-    h('div', { class: 'mute' }, `전략: ${e.strategies.join(', ') || '-'} · 실수: ${e.mistakes.join(', ') || '-'} · 등급: ${e.grade ?? '-'}`),
-    e.body?.length ? h('div', { class: 'log' }, e.body.join('\n')) : h('div', { class: 'mute' }, '-: 본문 없음(--no-body로 내보냈거나 빈 페이지)'))));
+  const how = new Map((S.linked.links ?? []).map((l) => [l.pageId, l]));
+  return h('section', { class: 'jcard' }, h('div', { class: 'between' }, h('h2', { class: 'big' }, '매매일지'),
+    h('button', { class: 'sub', title: '노션 "연결ID" 칸에 붙여넣으면 이 거래에 정확히 연결됩니다', onclick: (e) => { navigator.clipboard?.writeText(tradeId); e.target.textContent = '복사됨'; } }, '거래 ID 복사')),
+    es.map((e) => {
+      const l = how.get(e.pageId);
+      return h('article', { class: 'jentry' },
+        h('div', { class: 'between' }, h('h3', { class: 'jt' }, e.title ?? '(제목 없음)'),
+          h('div', { class: 'row' }, e.grade ? h('span', { class: 'grade ' + (GRADE[e.grade] ?? '') }, `등급 ${e.grade}`) : null,
+            h('span', { class: 'mute small' }, l?.by === 'linkId' ? '연결ID로 연결' : '종목+날짜로 자동 연결'),
+            e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener' }, '노션에서 열기') : null)),
+        h('div', { class: 'jtags' },
+          e.strategies.length ? [h('span', { class: 'jk' }, '전략'), e.strategies.map((x) => h('span', { class: 'chip blue' }, x))] : null,
+          e.mistakes.length ? [h('span', { class: 'jk' }, '실수'), e.mistakes.map((x) => h('span', { class: 'chip red' }, x))] : null),
+        e.body?.length ? h('div', { class: 'jbody' }, renderBody(e.body)) : h('div', { class: 'mute' }, '-: 본문 없음(--no-body로 내보냈거나 빈 페이지)'));
+    }));
 }
