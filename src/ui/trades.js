@@ -17,6 +17,7 @@ const COLS = {
   avgEntryPx: { label: '평균 진입가', icon: 'hash', cell: (t) => px(t.avgEntryPx), val: (t) => t.avgEntryPx },
   avgExitPx: { label: '평균 청산가', icon: 'hash', cell: (t) => (t.status === 'CLOSED' ? px(t.avgExitPx) : '-'), val: (t) => t.avgExitPx },
   strategies: { label: '매매 전략', icon: 'lines', cell: (t, js) => chips([...new Set(js.flatMap((e) => e.strategies))]) },
+  reasons: { label: '진입 근거', icon: 'lines', cell: (t, js) => chips([...new Set(js.flatMap((e) => e.reasons ?? []))]) },
   mistakes: { label: '실수', icon: 'lines', cell: (t, js) => chips([...new Set(js.flatMap((e) => e.mistakes))]) },
   grade: { label: '등급', icon: 'target', cell: (t, js) => js.map((e) => e.grade).filter(Boolean).join(', ') || '-' },
   instType: { label: '상품군', icon: 'lines', cell: (t) => t.instType, val: (t) => t.instType },
@@ -25,7 +26,7 @@ const COLS = {
   fee: { label: '수수료', icon: 'hash', cell: (t) => fmtNum(t.fee, 4), val: (t) => t.fee },
   status: { label: '상태', icon: 'target', cell: (t) => t.status, val: (t) => t.status },
 };
-const DEFAULT_COLS = ['openTs', 'instId', 'side', 'maxSize', 'net', 'avgEntryPx', 'avgExitPx', 'strategies', 'mistakes', 'grade'];
+const DEFAULT_COLS = ['openTs', 'instId', 'side', 'maxSize', 'net', 'avgEntryPx', 'avgExitPx', 'strategies', 'reasons', 'mistakes', 'grade'];
 let cols = (() => { try { const v = JSON.parse(localStorage.getItem('okx.cols')); return Array.isArray(v) && v.every((x) => COLS[x]) && v.length ? v : DEFAULT_COLS; } catch { return DEFAULT_COLS; } })();
 const saveCols = () => { try { localStorage.setItem('okx.cols', JSON.stringify(cols)); } catch { /* 저장 불가 환경 */ } };
 
@@ -43,7 +44,7 @@ export function tradesView(rerender) {
   const jOf = (t) => S.linked?.byTrade.get(t.id) ?? [];
   const q = ui.q.trim().toLowerCase();
   let list = r.trades.filter((t) => (ui.type === 'ALL' || t.instType === ui.type) && (ui.inst === 'ALL' || t.instId === ui.inst) && (ui.side === 'ALL' || t.side === ui.side)
-    && (!q || [t.instId, t.side, ...jOf(t).flatMap((e) => [e.title, ...e.strategies, ...e.mistakes, e.grade])].some((x) => String(x ?? '').toLowerCase().includes(q))));
+    && (!q || [t.instId, t.side, ...jOf(t).flatMap((e) => [e.title, ...e.strategies, ...(e.reasons ?? []), ...e.mistakes, e.grade])].some((x) => String(x ?? '').toLowerCase().includes(q))));
   const key = (COLS[ui.sort] ?? COLS.openTs).val ?? COLS.openTs.val;
   list = [...list].sort((a, b) => ((key(a) ?? -Infinity) > (key(b) ?? -Infinity) ? 1 : (key(a) ?? -Infinity) < (key(b) ?? -Infinity) ? -1 : 0) * ui.dir);
 

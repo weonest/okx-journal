@@ -12,6 +12,9 @@
    "strategies": [
     "눌림목"
    ],
+   "reasons": [
+    "지지선 반등"
+   ],
    "mistakes": [],
    "grade": "A",
    "linkId": null,
@@ -24,207 +27,181 @@
   {
    "pageId": "demo-2",
    "url": null,
-   "title": "BTC 숏 복기",
-   "date": "2026-09-04T20:37:01.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "SHORT",
-   "strategies": [
-    "추세추종"
-   ],
-   "mistakes": [],
-   "grade": "A",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
-    "계획대로 청산함."
-   ]
-  },
-  {
-   "pageId": "demo-3",
-   "url": null,
-   "title": "BTC 숏 복기",
-   "date": "2026-09-07T00:32:05.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "SHORT",
-   "strategies": [
-    "역추세",
-    "거래량 급증"
-   ],
-   "mistakes": [
-    "과대 포지션"
-   ],
-   "grade": "C",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 역추세 패턴 확인 후 진입 (레버 10배)",
-    "복기: 과대 포지션이(가) 문제였다."
-   ]
-  },
-  {
-   "pageId": "demo-4",
-   "url": null,
-   "title": "BTC 숏 복기",
-   "date": "2026-09-09T17:32:26.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "SHORT",
-   "strategies": [
-    "눌림목",
-    "거래량 급증"
-   ],
-   "mistakes": [],
-   "grade": "B",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 10배)",
-    "계획대로 청산함."
-   ]
-  },
-  {
-   "pageId": "demo-5",
-   "url": null,
    "title": "BTC 롱 복기",
-   "date": "2026-09-16T19:01:59.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "LONG",
-   "strategies": [
-    "추세추종"
-   ],
-   "mistakes": [
-    "추격 진입"
-   ],
-   "grade": "C",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
-    "복기: 추격 진입이(가) 문제였다."
-   ]
-  },
-  {
-   "pageId": "demo-6",
-   "url": null,
-   "title": "BTC 롱 복기",
-   "date": "2026-09-18T16:11:54.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "LONG",
-   "strategies": [
-    "눌림목"
-   ],
-   "mistakes": [],
-   "grade": "C",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 20배)",
-    "손절 규칙은 지켰다."
-   ]
-  },
-  {
-   "pageId": "demo-7",
-   "url": null,
-   "title": "BTC 숏 복기",
-   "date": "2026-09-24T15:54:27.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "SHORT",
-   "strategies": [
-    "눌림목",
-    "거래량 급증"
-   ],
-   "mistakes": [
-    "과대 포지션"
-   ],
-   "grade": "C",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 5배)",
-    "복기: 과대 포지션이(가) 문제였다."
-   ]
-  },
-  {
-   "pageId": "demo-8",
-   "url": null,
-   "title": "BTC 롱 복기",
-   "date": "2026-09-27T13:47:10.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "LONG",
-   "strategies": [
-    "추세추종",
-    "거래량 급증"
-   ],
-   "mistakes": [],
-   "grade": "A",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
-    "계획대로 청산함."
-   ]
-  },
-  {
-   "pageId": "demo-9",
-   "url": null,
-   "title": "BTC 롱 복기",
-   "date": "2026-09-30T20:25:03.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "LONG",
-   "strategies": [
-    "추세추종"
-   ],
-   "mistakes": [],
-   "grade": "A",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
-    "계획대로 청산함."
-   ]
-  },
-  {
-   "pageId": "demo-10",
-   "url": null,
-   "title": "BTC 롱 복기",
-   "date": "2026-10-02T04:11:45.000Z",
-   "dateEnd": null,
-   "instId": "BTC",
-   "side": "LONG",
-   "strategies": [
-    "눌림목",
-    "거래량 급증"
-   ],
-   "mistakes": [],
-   "grade": "C",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 20배)",
-    "손절 규칙은 지켰다."
-   ]
-  },
-  {
-   "pageId": "demo-11",
-   "url": null,
-   "title": "BTC 롱 복기",
-   "date": "2026-10-05T02:59:44.000Z",
+   "date": "2026-09-17T06:26:12.000Z",
    "dateEnd": null,
    "instId": "BTC",
    "side": "LONG",
    "strategies": [
     "역추세"
    ],
+   "reasons": [
+    "20EMA 지지"
+   ],
+   "mistakes": [],
+   "grade": "A",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 역추세 패턴 확인 후 진입 (레버 10배)",
+    "계획대로 청산함."
+   ]
+  },
+  {
+   "pageId": "demo-3",
+   "url": null,
+   "title": "BTC 롱 복기",
+   "date": "2026-09-19T23:33:40.000Z",
+   "dateEnd": null,
+   "instId": "BTC",
+   "side": "LONG",
+   "strategies": [
+    "돌파"
+   ],
+   "reasons": [
+    "지지선 반등"
+   ],
+   "mistakes": [],
+   "grade": "A",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 돌파 패턴 확인 후 진입 (레버 20배)",
+    "계획대로 청산함."
+   ]
+  },
+  {
+   "pageId": "demo-4",
+   "url": null,
+   "title": "BTC 롱 복기",
+   "date": "2026-09-21T08:07:21.000Z",
+   "dateEnd": null,
+   "instId": "BTC",
+   "side": "LONG",
+   "strategies": [
+    "추세추종"
+   ],
+   "reasons": [
+    "추세선 이탈"
+   ],
+   "mistakes": [],
+   "grade": "A",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 추세추종 패턴 확인 후 진입 (레버 5배)",
+    "계획대로 청산함."
+   ]
+  },
+  {
+   "pageId": "demo-5",
+   "url": null,
+   "title": "BTC 숏 복기",
+   "date": "2026-09-23T17:11:32.000Z",
+   "dateEnd": null,
+   "instId": "BTC",
+   "side": "SHORT",
+   "strategies": [
+    "추세추종"
+   ],
+   "reasons": [
+    "저항 돌파"
+   ],
+   "mistakes": [],
+   "grade": "A",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 추세추종 패턴 확인 후 진입 (레버 5배)",
+    "계획대로 청산함."
+   ]
+  },
+  {
+   "pageId": "demo-6",
+   "url": null,
+   "title": "BTC 롱 복기",
+   "date": "2026-09-27T06:42:04.000Z",
+   "dateEnd": null,
+   "instId": "BTC",
+   "side": "LONG",
+   "strategies": [
+    "추세추종"
+   ],
+   "reasons": [
+    "지지선 반등"
+   ],
+   "mistakes": [],
+   "grade": "A",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
+    "계획대로 청산함."
+   ]
+  },
+  {
+   "pageId": "demo-7",
+   "url": null,
+   "title": "BTC 롱 복기",
+   "date": "2026-09-30T09:39:06.000Z",
+   "dateEnd": null,
+   "instId": "BTC",
+   "side": "LONG",
+   "strategies": [
+    "돌파"
+   ],
+   "reasons": [
+    "지지선 반등"
+   ],
    "mistakes": [],
    "grade": "B",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 돌파 패턴 확인 후 진입 (레버 10배)",
+    "계획대로 청산함."
+   ]
+  },
+  {
+   "pageId": "demo-8",
+   "url": null,
+   "title": "BTC 롱 복기",
+   "date": "2026-10-05T02:27:03.000Z",
+   "dateEnd": null,
+   "instId": "BTC",
+   "side": "LONG",
+   "strategies": [
+    "눌림목",
+    "거래량 급증"
+   ],
+   "reasons": [
+    "저항 돌파"
+   ],
+   "mistakes": [],
+   "grade": "B",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 눌림목 패턴 확인 후 진입 (레버 20배)",
+    "손절 규칙은 지켰다."
+   ]
+  },
+  {
+   "pageId": "demo-9",
+   "url": null,
+   "title": "ETH 롱 복기",
+   "date": "2026-09-04T00:57:43.000Z",
+   "dateEnd": null,
+   "instId": "ETH",
+   "side": "LONG",
+   "strategies": [
+    "역추세"
+   ],
+   "reasons": [
+    "거래량 급증"
+   ],
+   "mistakes": [],
+   "grade": "A",
    "linkId": null,
    "body": [
     "# 진입 근거",
@@ -233,18 +210,69 @@
    ]
   },
   {
+   "pageId": "demo-10",
+   "url": null,
+   "title": "ETH 숏 복기",
+   "date": "2026-09-05T09:04:45.000Z",
+   "dateEnd": null,
+   "instId": "ETH",
+   "side": "SHORT",
+   "strategies": [
+    "추세추종"
+   ],
+   "reasons": [
+    "20EMA 지지"
+   ],
+   "mistakes": [],
+   "grade": "C",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
+    "손절 규칙은 지켰다."
+   ]
+  },
+  {
+   "pageId": "demo-11",
+   "url": null,
+   "title": "ETH 롱 복기",
+   "date": "2026-09-07T02:15:00.000Z",
+   "dateEnd": null,
+   "instId": "ETH",
+   "side": "LONG",
+   "strategies": [
+    "추세추종"
+   ],
+   "reasons": [
+    "20EMA 지지"
+   ],
+   "mistakes": [
+    "손절 지연"
+   ],
+   "grade": "C",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 추세추종 패턴 확인 후 진입 (레버 20배)",
+    "복기: 손절 지연이(가) 문제였다."
+   ]
+  },
+  {
    "pageId": "demo-12",
    "url": null,
    "title": "ETH 숏 복기",
-   "date": "2026-09-08T19:44:19.000Z",
+   "date": "2026-09-07T23:18:19.000Z",
    "dateEnd": null,
    "instId": "ETH",
    "side": "SHORT",
    "strategies": [
     "돌파"
    ],
+   "reasons": [
+    "거래량 급증"
+   ],
    "mistakes": [],
-   "grade": "B",
+   "grade": "A",
    "linkId": null,
    "body": [
     "# 진입 근거",
@@ -256,75 +284,110 @@
    "pageId": "demo-13",
    "url": null,
    "title": "ETH 숏 복기",
-   "date": "2026-09-10T12:51:45.000Z",
+   "date": "2026-09-10T15:24:58.000Z",
    "dateEnd": null,
    "instId": "ETH",
    "side": "SHORT",
    "strategies": [
-    "눌림목"
+    "추세추종"
+   ],
+   "reasons": [
+    "저항 돌파"
    ],
    "mistakes": [],
    "grade": "A",
    "linkId": null,
    "body": [
     "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 10배)",
+    "- 추세추종 패턴 확인 후 진입 (레버 5배)",
     "계획대로 청산함."
    ]
   },
   {
    "pageId": "demo-14",
    "url": null,
-   "title": "ETH 롱 복기",
-   "date": "2026-09-13T08:29:30.000Z",
+   "title": "ETH 숏 복기",
+   "date": "2026-09-13T19:03:03.000Z",
    "dateEnd": null,
    "instId": "ETH",
-   "side": "LONG",
+   "side": "SHORT",
    "strategies": [
-    "눌림목"
+    "돌파"
    ],
-   "mistakes": [
-    "추격 진입"
+   "reasons": [
+    "저항 돌파"
    ],
-   "grade": "C",
+   "mistakes": [],
+   "grade": "A",
    "linkId": null,
    "body": [
     "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 20배)",
-    "복기: 추격 진입이(가) 문제였다."
+    "- 돌파 패턴 확인 후 진입 (레버 5배)",
+    "계획대로 청산함."
    ]
   },
   {
    "pageId": "demo-15",
    "url": null,
    "title": "ETH 롱 복기",
-   "date": "2026-09-16T11:49:18.000Z",
+   "date": "2026-09-20T17:22:49.000Z",
    "dateEnd": null,
    "instId": "ETH",
    "side": "LONG",
    "strategies": [
-    "역추세"
+    "추세추종",
+    "거래량 급증"
+   ],
+   "reasons": [
+    "20EMA 지지"
    ],
    "mistakes": [],
    "grade": "B",
    "linkId": null,
    "body": [
     "# 진입 근거",
-    "- 역추세 패턴 확인 후 진입 (레버 10배)",
-    "계획대로 청산함."
+    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
+    "손절 규칙은 지켰다."
    ]
   },
   {
    "pageId": "demo-16",
    "url": null,
    "title": "ETH 숏 복기",
-   "date": "2026-09-18T00:16:50.000Z",
+   "date": "2026-09-24T02:05:19.000Z",
    "dateEnd": null,
    "instId": "ETH",
    "side": "SHORT",
    "strategies": [
-    "추세추종",
-    "거래량 급증"
+    "돌파"
+   ],
+   "reasons": [
+    "추세선 이탈"
+   ],
+   "mistakes": [
+    "손절 지연"
+   ],
+   "grade": "C",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 돌파 패턴 확인 후 진입 (레버 10배)",
+    "복기: 손절 지연이(가) 문제였다."
+   ]
+  },
+  {
+   "pageId": "demo-17",
+   "url": null,
+   "title": "SOL 롱 복기",
+   "date": "2026-09-09T10:51:11.000Z",
+   "dateEnd": null,
+   "instId": "SOL",
+   "side": "LONG",
+   "strategies": [
+    "눌림목"
+   ],
+   "reasons": [
+    "추세선 이탈"
    ],
    "mistakes": [
     "과대 포지션"
@@ -333,103 +396,26 @@
    "linkId": null,
    "body": [
     "# 진입 근거",
-    "- 추세추종 패턴 확인 후 진입 (레버 5배)",
+    "- 눌림목 패턴 확인 후 진입 (레버 10배)",
     "복기: 과대 포지션이(가) 문제였다."
-   ]
-  },
-  {
-   "pageId": "demo-17",
-   "url": null,
-   "title": "ETH 롱 복기",
-   "date": "2026-09-20T18:34:47.000Z",
-   "dateEnd": null,
-   "instId": "ETH",
-   "side": "LONG",
-   "strategies": [
-    "추세추종"
-   ],
-   "mistakes": [],
-   "grade": "B",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 추세추종 패턴 확인 후 진입 (레버 20배)",
-    "계획대로 청산함."
    ]
   },
   {
    "pageId": "demo-18",
    "url": null,
-   "title": "ETH 숏 복기",
-   "date": "2026-09-28T22:45:13.000Z",
-   "dateEnd": null,
-   "instId": "ETH",
-   "side": "SHORT",
-   "strategies": [
-    "눌림목"
-   ],
-   "mistakes": [],
-   "grade": "A",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 20배)",
-    "계획대로 청산함."
-   ]
-  },
-  {
-   "pageId": "demo-19",
-   "url": null,
-   "title": "SOL 숏 복기",
-   "date": "2026-09-03T13:59:17.000Z",
+   "title": "SOL 롱 복기",
+   "date": "2026-09-16T19:23:42.000Z",
    "dateEnd": null,
    "instId": "SOL",
-   "side": "SHORT",
+   "side": "LONG",
    "strategies": [
     "역추세"
+   ],
+   "reasons": [
+    "저항 돌파"
    ],
    "mistakes": [],
    "grade": "B",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 역추세 패턴 확인 후 진입 (레버 5배)",
-    "계획대로 청산함."
-   ]
-  },
-  {
-   "pageId": "demo-20",
-   "url": null,
-   "title": "SOL 롱 복기",
-   "date": "2026-09-08T15:32:38.000Z",
-   "dateEnd": null,
-   "instId": "SOL",
-   "side": "LONG",
-   "strategies": [
-    "역추세"
-   ],
-   "mistakes": [],
-   "grade": "A",
-   "linkId": null,
-   "body": [
-    "# 진입 근거",
-    "- 역추세 패턴 확인 후 진입 (레버 10배)",
-    "계획대로 청산함."
-   ]
-  },
-  {
-   "pageId": "demo-21",
-   "url": null,
-   "title": "SOL 롱 복기",
-   "date": "2026-09-16T00:05:09.000Z",
-   "dateEnd": null,
-   "instId": "SOL",
-   "side": "LONG",
-   "strategies": [
-    "역추세"
-   ],
-   "mistakes": [],
-   "grade": "A",
    "linkId": null,
    "body": [
     "# 진입 근거",
@@ -438,44 +424,97 @@
    ]
   },
   {
-   "pageId": "demo-22",
+   "pageId": "demo-19",
    "url": null,
    "title": "SOL 롱 복기",
-   "date": "2026-09-16T15:23:07.000Z",
+   "date": "2026-09-18T08:14:51.000Z",
    "dateEnd": null,
    "instId": "SOL",
    "side": "LONG",
    "strategies": [
-    "눌림목",
+    "추세추종"
+   ],
+   "reasons": [
     "거래량 급증"
+   ],
+   "mistakes": [],
+   "grade": "C",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 추세추종 패턴 확인 후 진입 (레버 5배)",
+    "손절 규칙은 지켰다."
+   ]
+  },
+  {
+   "pageId": "demo-20",
+   "url": null,
+   "title": "SOL 롱 복기",
+   "date": "2026-09-21T02:40:17.000Z",
+   "dateEnd": null,
+   "instId": "SOL",
+   "side": "LONG",
+   "strategies": [
+    "추세추종",
+    "거래량 급증"
+   ],
+   "reasons": [
+    "저항 돌파"
    ],
    "mistakes": [],
    "grade": "B",
    "linkId": null,
    "body": [
     "# 진입 근거",
-    "- 눌림목 패턴 확인 후 진입 (레버 10배)",
+    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
     "계획대로 청산함."
    ]
   },
   {
-   "pageId": "demo-23",
+   "pageId": "demo-21",
    "url": null,
    "title": "SOL 숏 복기",
-   "date": "2026-09-20T21:12:43.000Z",
+   "date": "2026-09-21T19:50:04.000Z",
    "dateEnd": null,
    "instId": "SOL",
    "side": "SHORT",
    "strategies": [
-    "추세추종",
-    "거래량 급증"
+    "역추세"
    ],
-   "mistakes": [],
-   "grade": "A",
+   "reasons": [
+    "추세선 이탈"
+   ],
+   "mistakes": [
+    "추격 진입"
+   ],
+   "grade": "C",
    "linkId": null,
    "body": [
     "# 진입 근거",
-    "- 추세추종 패턴 확인 후 진입 (레버 20배)",
+    "- 역추세 패턴 확인 후 진입 (레버 5배)",
+    "복기: 추격 진입이(가) 문제였다."
+   ]
+  },
+  {
+   "pageId": "demo-22",
+   "url": null,
+   "title": "SOL 숏 복기",
+   "date": "2026-09-22T14:04:25.000Z",
+   "dateEnd": null,
+   "instId": "SOL",
+   "side": "SHORT",
+   "strategies": [
+    "추세추종"
+   ],
+   "reasons": [
+    "20EMA 지지"
+   ],
+   "mistakes": [],
+   "grade": "B",
+   "linkId": null,
+   "body": [
+    "# 진입 근거",
+    "- 추세추종 패턴 확인 후 진입 (레버 10배)",
     "계획대로 청산함."
    ]
   }

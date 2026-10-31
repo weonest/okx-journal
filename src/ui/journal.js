@@ -33,7 +33,7 @@ export function journalView() {
     up,
     h('section', {}, h('div', {}, `일지 ${S.journal.entries.length}건 · 연결 ${L.links.length} · 미연결 ${L.unlinked.length}`,
       S.journal.exportedAt ? h('span', { class: 'mute' }, ` · 내보낸 시각 ${fmtTs(S.journal.exportedAt)} (KST)`) : null)),
-    h('section', {}, statTable(S.jstats.strategies, '전략별'), statTable(S.jstats.mistakes, '실수별'), statTable(S.jstats.grade, '등급별')),
+    h('section', {}, statTable(S.jstats.strategies, '전략별'), statTable(S.jstats.reasons, '진입 근거별'), statTable(S.jstats.mistakes, '실수별'), statTable(S.jstats.grade, '등급별')),
     h('section', {}, h('h2', {}, '일지 목록'), table(['날짜(KST)', '종목', '방향', '전략', '실수', '등급', '연결된 거래', '연결 근거/사유'], rows)));
 }
 
@@ -67,6 +67,7 @@ export function journalForTrade(tradeId) {
             e.url ? h('a', { href: e.url, target: '_blank', rel: 'noopener' }, '노션에서 열기') : null)),
         h('div', { class: 'jtags' },
           e.strategies.length ? [h('span', { class: 'jk' }, '전략'), e.strategies.map((x) => h('span', { class: 'chip blue' }, x))] : null,
+          e.reasons?.length ? [h('span', { class: 'jk' }, '진입 근거'), e.reasons.map((x) => h('span', { class: 'chip green' }, x))] : null,
           e.mistakes.length ? [h('span', { class: 'jk' }, '실수'), e.mistakes.map((x) => h('span', { class: 'chip red' }, x))] : null),
         e.body?.length ? h('div', { class: 'jbody' }, renderBody(e.body)) : h('div', { class: 'mute' }, '-: 본문 없음(--no-body로 내보냈거나 빈 페이지)'));
     }));

@@ -19,7 +19,7 @@ function text(p) {
 }
 const tags = (p) => (p?.type === 'multi_select' ? p.multi_select.map((x) => x.name) : text(p) ? [text(p)] : []);
 
-export const DEFAULT_PROPS = { date: '날짜', instId: '종목', side: '방향', strategies: '전략', mistakes: '실수', grade: '등급', linkId: '연결ID' };
+export const DEFAULT_PROPS = { date: '날짜', instId: '종목', side: '방향', strategies: '전략', reasons: '진입 근거', mistakes: '실수', grade: '등급', linkId: '연결ID' };
 
 /**
  * 노션 DB 조회 결과(results) → 일지 항목. 날짜가 없으면 항목은 남기되 연결에서 제외된다.
@@ -35,7 +35,7 @@ export function parseNotionPages(pages, names = {}) {
       pageId: pg.id, url: pg.url ?? null, title: text(title),
       date: d?.start ?? null, dateEnd: d?.end ?? null,
       instId: text(pr[n.instId]), side: text(pr[n.side]),
-      strategies: tags(pr[n.strategies]), mistakes: tags(pr[n.mistakes]), grade: text(pr[n.grade]),
+      strategies: tags(pr[n.strategies]), reasons: tags(pr[n.reasons]), mistakes: tags(pr[n.mistakes]), grade: text(pr[n.grade]),
       linkId: text(pr[n.linkId]), body: [],
     };
   });
@@ -95,7 +95,7 @@ export function linkJournal(entries, trades, opts = {}) {
  * @param {Map<string, any[]>} byTrade @param {any[]} trades
  */
 export function journalStats(byTrade, trades) {
-  const by = { strategies: {}, mistakes: {}, grade: {} };
+  const by = { strategies: {}, reasons: {}, mistakes: {}, grade: {} };
   let skipped = 0;
   const bump = (g, tag, t) => {
     const x = (by[g][tag] ??= { count: 0, wins: 0, losses: 0, net: {} });
@@ -107,9 +107,10 @@ export function journalStats(byTrade, trades) {
     const es = byTrade.get(t.id);
     if (!es || t.status !== 'CLOSED') continue;
     if (t.net == null || !t.ccy) { skipped++; continue; }
-    const seen = { strategies: new Set(), mistakes: new Set(), grade: new Set() };
+    const seen = { strategies: new Set(), reasons: new Set(), mistakes: new Set(), grade: new Set() };
     for (const e of es) {
       for (const s of e.strategies) if (!seen.strategies.has(s)) { seen.strategies.add(s); bump('strategies', s, t); }
+      for (const x of e.reasons ?? []) if (!seen.reasons.has(x)) { seen.reasons.add(x); bump('reasons', x, t); }
       for (const m of e.mistakes) if (!seen.mistakes.has(m)) { seen.mistakes.add(m); bump('mistakes', m, t); }
       if (e.grade && !seen.grade.has(e.grade)) { seen.grade.add(e.grade); bump('grade', e.grade, t); }
     }
@@ -117,5 +118,5 @@ export function journalStats(byTrade, trades) {
   const fin = (o) => Object.fromEntries(Object.entries(o).map(([k, v]) => [k, { ...v, winRate: v.count ? v.wins / v.count : null }]));
   const note = '청산된 거래만, 통화가 여러 개인 거래 제외' + (skipped ? ` (${skipped}건 제외)` : '') + '. 승률=이익 거래/전체(무승부 포함)';
   const m = (v) => ({ value: v, source: 'Notion×trades', note });
-  return { strategies: m(fin(by.strategies)), mistakes: m(fin(by.mistakes)), grade: m(fin(by.grade)) };
+  return { strategies: m(fin(by.strategies)), reasons: m(fin(by.reasons)), mistakes: m(fin(by.mistakes)), grade: m(fin(by.grade)) };
 }

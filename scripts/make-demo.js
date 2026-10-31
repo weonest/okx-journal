@@ -55,7 +55,7 @@ for (const [id, c] of Object.entries(INST)) {
       const st = [pick(['돌파', '눌림목', '역추세', '추세추종'])]; if (rnd() < 0.25) st.push('거래량 급증');
       const mi = !win && rnd() < 0.7 ? [pick(['추격 진입', '손절 지연', '과대 포지션'])] : [];
       journal.push({ pageId: `demo-${journal.length + 1}`, url: null, title: `${id.split('-')[0]} ${dir === 'long' ? '롱' : '숏'} 복기`, date: new Date(Math.round(t / 1000) * 1000).toISOString(), dateEnd: null,
-        instId: id.split('-')[0], side: dir === 'long' ? 'LONG' : 'SHORT', strategies: st, mistakes: mi, grade: win ? pick(['A', 'A', 'B']) : pick(['B', 'C', 'C']), linkId: null,
+        instId: id.split('-')[0], side: dir === 'long' ? 'LONG' : 'SHORT', strategies: st, reasons: [pick(['20EMA 지지', '지지선 반등', '저항 돌파', '추세선 이탈', '거래량 급증'])], mistakes: mi, grade: win ? pick(['A', 'A', 'B']) : pick(['B', 'C', 'C']), linkId: null,
         body: [`# 진입 근거`, `- ${st[0]} 패턴 확인 후 진입 (레버 ${lever}배)`, win ? '계획대로 청산함.' : mi.length ? `복기: ${mi[0]}이(가) 문제였다.` : '손절 규칙은 지켰다.'] });
     }
     if (i === n - 1 && id !== 'SOL-USDT-SWAP') { open.push({ id, dir, sz, entry, lever, c }); continue; } // 열어 둠

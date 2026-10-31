@@ -211,3 +211,4 @@ ul.jl li::before{content:'';position:absolute;left:3px;top:11px;width:5px;height
 ul.jl li:has(.chk)::before{display:none}ul.jl li:has(.chk){padding-left:0}
 .chk{display:inline-grid;place-items:center;width:15px;height:15px;border:1px solid var(--mute);border-radius:4px;margin-right:8px;vertical-align:-2px;font-size:11px;line-height:1}
 .chk.done{background:var(--acc);border-color:var(--acc);color:#04150d}
+.chip.green{background:rgba(62,207,142,.15);color:var(--up)}

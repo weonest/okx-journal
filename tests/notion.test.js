@@ -8,6 +8,7 @@ const page = (id, o = {}) => ({ object: 'page', id, url: 'u/' + id, properties: 
   날짜: { type: 'date', date: o.date ? { start: o.date, end: o.end ?? null } : null },
   종목: { type: 'select', select: o.inst ? { name: o.inst } : null },
   방향: { type: 'select', select: o.side ? { name: o.side } : null },
+  '진입 근거': { type: 'multi_select', multi_select: (o.re ?? []).map((name) => ({ name })) },
   전략: { type: 'multi_select', multi_select: (o.st ?? []).map((name) => ({ name })) },
   실수: { type: 'multi_select', multi_select: (o.mi ?? []).map((name) => ({ name })) },
   등급: { type: 'select', select: o.grade ? { name: o.grade } : null },
@@ -76,4 +77,11 @@ test('시각이 적힌 일지는 진입 시각과 5분 안으로 어긋나도 �
   const r = linkJournal(near, trades);
   assert.deepEqual(r.links.map((l) => l.pageId), ['1']);
   assert.equal(r.unlinked[0].pageId, '2');
+});
+
+test('진입 근거 파싱·집계', () => {
+  const es = parseNotionPages([page('1', { link: 'A#1', re: ['저항 돌파', '거래량 급증'] }), page('2', { link: 'B#1', re: ['저항 돌파'] })]);
+  assert.deepEqual(es[0].reasons, ['저항 돌파', '거래량 급증']);
+  const s = journalStats(linkJournal(es, trades).byTrade, trades);
+  assert.equal(s.reasons.value['저항 돌파'].count, 2); assert.equal(s.reasons.value['저항 돌파'].winRate, 0.5);
 });
