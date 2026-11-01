@@ -336,3 +336,20 @@ section code{overflow-wrap:anywhere;word-break:break-all}
 .lb img{max-width:100%;max-height:calc(100% - 48px);object-fit:contain;border-radius:6px}
 .lb-bar{display:flex;align-items:center;gap:12px;margin-top:10px}
 .lb-bar a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px}
+/* 마크다운 본문 */
+.md{line-height:1.65;overflow-wrap:anywhere}
+.md>:first-child{margin-top:0}
+.md .md-h{margin:16px 0 6px;font-weight:700}.md .md-h1{font-size:20px}.md .md-h2{font-size:17px}.md .md-h3{font-size:15px}
+.md .md-p{margin:6px 0}
+.md .md-list{margin:6px 0;padding-left:22px}.md .md-list li{margin:2px 0}
+.md li.md-task{list-style:none;margin-left:-20px;display:flex;gap:8px;align-items:flex-start}
+.md .chk.click{cursor:pointer}
+.md .md-done{color:var(--mute);text-decoration:line-through}
+.md .md-q{margin:8px 0;padding:4px 12px;border-left:3px solid var(--line);color:var(--mute)}
+.md .md-code{font:12.5px var(--mono);background:var(--panel2);padding:1px 5px;border-radius:4px}
+.md .md-pre{font:12.5px/1.5 var(--mono);background:var(--panel2);padding:10px 12px;border-radius:8px;overflow-x:auto;margin:8px 0;white-space:pre}
+.md .md-hr{border:0;border-top:1px solid var(--line);margin:14px 0}
+.md a{color:var(--acc)}
+.md .md-table{margin:8px 0}.md .md-table th,.md .md-table td{text-align:left}
+.rv-md{cursor:text;border:1px solid transparent;border-radius:6px;padding:8px;min-height:60px}
+.rv-md:hover{background:var(--panel)}

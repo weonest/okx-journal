@@ -1,5 +1,6 @@
 import { h, table, td, fmtNum, fmtPct, fmtTs, cls } from './dom.js';
 import { S, addJournal, exportReviews, importReviews } from './store.js';
+import { parseMarkdown } from '../core/markdown.js';
 
 const netText = (net) => Object.entries(net).map(([c, v]) => `${fmtNum(v)} ${c}`).join(' / ') || '-';
 
@@ -46,18 +47,34 @@ export function journalView() {
     backup);
 }
 
-/** 노션 본문 줄(내보내기 형식) → 읽기 좋은 블록. # 제목, - 목록, [ ]/[x] 체크, 나머지는 문단. */
-export function renderBody(lines) {
-  const out = []; let ul = null;
-  for (const l of lines) {
-    const todo = /^(?:- )?\[( |x)\] (.*)/.exec(l), li = !todo && /^[-*] (.*)/.exec(l), hd = /^#{1,3} (.*)/.exec(l);
-    if (li || todo) {
-      if (!ul) { ul = h('ul', { class: 'jl' }); out.push(ul); }
-      ul.append(h('li', {}, todo ? h('span', { class: 'chk' + (todo[1] === 'x' ? ' done' : '') }, todo[1] === 'x' ? '✓' : '') : null, todo ? todo[2] : li[1]));
-    } else { ul = null; out.push(hd ? h('h4', { class: 'jh' }, hd[1]) : h('p', { class: 'jp' }, l)); }
-  }
-  return out;
+/**
+ * 마크다운 → DOM(HTML 문자열을 쓰지 않는다). onToggle(줄 번호)를 주면 체크박스를 누를 수 있다.
+ * @param {string} text @param {((line:number)=>void)|null} [onToggle]
+ */
+export function renderMarkdown(text, onToggle = null) {
+  const inl = (c) => c.map((x) => {
+    if (x.t === 'text') return x.v;
+    if (x.t === 'code') return h('code', { class: 'md-code' }, x.v);
+    if (x.t === 'a') return h('a', { href: x.href, target: '_blank', rel: 'noopener noreferrer' }, inl(x.c));
+    return h({ b: 'strong', i: 'em', s: 'del' }[x.t], {}, inl(x.c));
+  });
+  const lines = (ls) => ls.flatMap((c, i) => (i ? [h('br'), ...inl(c)] : inl(c)));
+  return parseMarkdown(text).map((b) => {
+    if (b.t === 'h') return h(['h3', 'h4', 'h5'][b.level - 1], { class: 'md-h md-h' + b.level }, inl(b.c));
+    if (b.t === 'p') return h('p', { class: 'md-p' }, lines(b.lines));
+    if (b.t === 'hr') return h('hr', { class: 'md-hr' });
+    if (b.t === 'quote') return h('blockquote', { class: 'md-q' }, lines(b.lines));
+    if (b.t === 'code') return h('pre', { class: 'md-pre' }, h('code', {}, b.text));
+    if (b.t === 'table') return h('div', { class: 'tbl' }, h('table', { class: 'md-table' }, h('thead', {}, h('tr', {}, b.head.map((c) => h('th', {}, inl(c))))), h('tbody', {}, b.rows.map((r) => h('tr', {}, r.map((c) => h('td', {}, inl(c))))))));
+    // 목록: 단계는 들여쓰기로 표시
+    return h(b.t, { class: 'md-list', start: b.start && b.start !== 1 ? b.start : null }, b.items.map((it) => h('li', { class: it.check == null ? null : 'md-task', style: it.depth ? `margin-left:${it.depth * 20}px` : null },
+      it.check == null ? null : h('span', { class: 'chk' + (it.check ? ' done' : '') + (onToggle ? ' click' : ''), role: onToggle ? 'checkbox' : null, 'aria-checked': String(it.check), onclick: onToggle ? (e) => { e.stopPropagation(); onToggle(it.line); } : null }, it.check ? '✓' : ''),
+      h('span', { class: it.check ? 'md-done' : null }, inl(it.c)))));
+  });
 }
+
+/** 노션 내보내기 본문(줄 배열) → 같은 마크다운 렌더러로 표시 */
+export const renderBody = (lines) => renderMarkdown(lines.join('\n'));
 const GRADE = { A: 'g-a', B: 'g-b', C: 'g-c', D: 'g-d' };
 
 /** 거래 상세용: 연결된 일지 항목(제목·태그·본문). 없으면 null. */
