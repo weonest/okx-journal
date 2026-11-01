@@ -30,11 +30,23 @@ function relink() {
 // --- 거래별 복기: 사용자가 쓴 내용이므로 "이 기기에 기억"과 상관없이 IndexedDB에 저장한다 ---
 export const reviews = () => (S.sample ? S.demoReviews : S.reviews);
 export const reviewOf = (id) => ({ ...emptyReview(), ...(reviews()[id] ?? {}) });
+let reviewHook = null; // 클라우드 동기화가 등록한다(저장 직후 올리기 예약)
+export const setReviewHook = (f) => { reviewHook = f; };
 export function saveReview(id, r) {
   reviews()[id] = { ...r, updatedAt: Date.now() };
-  if (!S.sample) tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {});
+  if (!S.sample) { tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {}); reviewHook?.(); }
   relink(); subs.forEach((f) => f());
 }
+/** 클라우드 병합 결과로 교체(예시 데이터 중에는 화면을 건드리지 않는다). */
+export function replaceReviews(m) {
+  S.reviews = m;
+  tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {});
+  if (!S.sample) { relink(); subs.forEach((f) => f()); }
+}
+// 이미지 원본 캐시(복기에는 id만 둔다)
+export const kvGet = (k) => tx('readonly', (st) => st.get(k)).catch(() => null);
+export const kvPut = (k, v) => tx('readwrite', (st) => st.put(v, k)).catch(() => {});
+export const kvDel = (k) => tx('readwrite', (st) => st.delete(k)).catch(() => {});
 export function exportReviews() {
   const blob = new Blob([JSON.stringify({ kind: 'okx-journal-reviews', exportedAt: Date.now(), reviews: S.reviews })], { type: 'application/json' });
   const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `okx-journal-reviews-${new Date().toISOString().slice(0, 10)}.json`; a.click();
@@ -52,6 +64,14 @@ export async function importReviews(file) {
 }
 async function loadReviews() {
   try { S.reviews = (await tx('readonly', (st) => st.get('reviews'))) ?? {}; } catch { S.reviews = {}; }
+  // 이전 형식(복기 안에 이미지 src)을 캐시로 옮긴다
+  let moved = false;
+  for (const r of Object.values(S.reviews)) for (const im of r.images ?? []) {
+    if (!im.src) continue;
+    im.id ??= crypto.randomUUID(); im.fileId ??= null;
+    await kvPut('img:' + im.id, im.src); delete im.src; moved = true;
+  }
+  if (moved) await tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {});
 }
 export async function addJournal(file) {
   const j = JSON.parse(await file.text());

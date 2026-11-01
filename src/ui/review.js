@@ -4,6 +4,8 @@ import { h, icon, fmtNum, fmtTs, fmtDur, fmtPct, cls } from './dom.js';
 import { S, reviewOf, saveReview } from './store.js';
 import { REVIEW_FIELDS, parseTags, leverageOf, roeOf } from '../core/review.js';
 import { renderBody, journalForTrade } from './journal.js';
+import { imageSrc, forgetImage, cloudBadge } from './cloud.js';
+import { kvPut } from './store.js';
 
 const MAX_IMG = 1600; // 긴 변(px). 브라우저 저장 공간을 아끼려고 줄여서 저장한다
 let overlay = null;
@@ -95,14 +97,25 @@ export function openReview(tradeId) {
 
   // 이미지: 업로드·붙여넣기·끌어다 놓기
   const gal = h('div', { class: 'rv-gal' });
-  const drawImgs = () => gal.replaceChildren(...r.images.map((im, i) => h('figure', {}, h('img', { src: im.src, alt: im.name ?? '', onclick: () => window.open(im.src, '_blank') }),
-    h('button', { class: 'ib', title: '삭제', onclick: () => { save({ images: r.images.filter((_, j) => j !== i) }); drawImgs(); } }, '×'))));
+  const drawImgs = () => gal.replaceChildren(...r.images.map((im) => {
+    const img = h('img', { alt: im.name ?? '' }), fig = h('figure', { class: 'loading' }, img,
+      h('button', { class: 'ib', title: '삭제', onclick: () => { forgetImage(im); save({ images: r.images.filter((x) => x !== im) }); drawImgs(); } }, '×'));
+    imageSrc(im).then((src) => { fig.classList.remove('loading'); if (src) { img.src = src; img.onclick = () => window.open(src, '_blank'); } else fig.append(h('span', { class: 'mute small' }, '이 기기에 없음(Drive 연결 후 표시)')); });
+    return fig;
+  }));
   drawImgs();
   const imsg = h('span', { class: 'mute small' });
   const addFiles = async (files) => {
     const imgs = [...files].filter((f) => f.type.startsWith('image/'));
     if (!imgs.length) return;
-    try { const add = await Promise.all(imgs.map(shrink)); save({ images: [...r.images, ...add] }); drawImgs(); imsg.textContent = ''; } catch (e) { imsg.textContent = '이미지 오류: ' + e.message; }
+    try {
+      const add = await Promise.all(imgs.map(async (f) => {
+        const { src, name } = await shrink(f), id = crypto.randomUUID();
+        if (S.sample) return { id, name, fileId: null, src }; // 예시 데이터는 저장하지 않으므로 그대로 둔다
+        await kvPut('img:' + id, src);
+        return { id, name, fileId: null };
+      }));
+      save({ images: [...r.images, ...add] }); drawImgs(); imsg.textContent = ''; } catch (e) { imsg.textContent = '이미지 오류: ' + e.message; }
   };
   const ipick = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: async () => { await addFiles(ipick.files); ipick.value = ''; } });
   const drop = h('div', { class: 'rv-drop' }, h('button', { class: 'sub acc', onclick: () => ipick.click() }, icon('upload', 15), ' 이미지 업로드'),
@@ -130,7 +143,7 @@ export function openReview(tradeId) {
     drop, gal,
     h('div', { class: 'between' }, h('h3', { class: 'rv-h' }, '본문'), pvBtn), ta, pv,
     journalForTrade(t.id),
-    h('div', { class: 'mute small rv-foot' }, (S.sample ? '예시 데이터: 이 복기는 저장되지 않습니다. ' : '이 브라우저에 자동 저장됩니다. ') + (r.updatedAt ? '마지막 저장 ' + fmtTs(r.updatedAt) : '')));
+    h('div', { class: 'mute small rv-foot' }, (S.sample ? '예시 데이터: 이 복기는 저장되지 않습니다. ' : '자동 저장됩니다. ') + (r.updatedAt ? '마지막 저장 ' + fmtTs(r.updatedAt) + ' ' : ''), S.sample ? null : cloudBadge()));
   page.onpaste = (e) => { if (e.clipboardData?.files?.length) { e.preventDefault(); addFiles(e.clipboardData.files); } };
   overlay = h('div', { class: 'rv-ov', onclick: (e) => { if (e.target === overlay) closeReview(); } }, page);
   document.body.append(overlay);
