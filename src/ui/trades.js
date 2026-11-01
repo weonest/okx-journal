@@ -2,6 +2,9 @@ import { h, table, td, icon, fmtNum, fmtTs, fmtDur, cls } from './dom.js';
 import { S } from './store.js';
 import { journalForTrade } from './journal.js';
 import { mkt } from './market.js';
+import { openReview } from './review.js';
+import { hasContent } from '../core/review.js';
+import { reviewOf } from './store.js';
 
 const ui = { type: 'ALL', inst: 'ALL', side: 'ALL', sort: 'openTs', dir: -1, q: '', pop: null, more: false };
 
@@ -12,6 +15,7 @@ const COLS = {
   openTs: { label: '매매일', icon: 'calendar', cell: (t) => fmtTs(t.openTs), val: (t) => t.openTs },
   instId: { label: '종목명', icon: 'lines', cell: (t) => t.instId.replace('-SWAP', ''), val: (t) => t.instId },
   side: { label: 'SIDE', icon: 'target', cell: (t) => h('span', { class: 'tag ' + t.side }, t.side.toUpperCase()), val: (t) => t.side },
+  execs: { label: '체결', icon: 'hash', cell: (t) => (t.execs?.length ? `${t.execs.length}건` : '-'), val: (t) => t.execs?.length ?? 0 },
   maxSize: { label: '최대 수량', icon: 'hash', cell: (t) => fmtNum(t.maxSize, 6), val: (t) => t.maxSize },
   net: { label: '순 손익', icon: 'arrow', cell: (t) => (t.ccy ? h('span', { class: cls(t.net) }, (t.net > 0 ? '+' : '') + fmtNum(t.net) + ' ' + t.ccy) : '통화 여럿'), val: (t) => t.net },
   avgEntryPx: { label: '평균 진입가', icon: 'hash', cell: (t) => px(t.avgEntryPx), val: (t) => t.avgEntryPx },
@@ -26,8 +30,10 @@ const COLS = {
   fee: { label: '수수료', icon: 'hash', cell: (t) => fmtNum(t.fee, 4), val: (t) => t.fee },
   status: { label: '상태', icon: 'target', cell: (t) => t.status, val: (t) => t.status },
 };
-const DEFAULT_COLS = ['openTs', 'instId', 'side', 'maxSize', 'net', 'avgEntryPx', 'avgExitPx', 'strategies', 'reasons', 'mistakes', 'grade'];
+const DEFAULT_COLS = ['openTs', 'instId', 'side', 'execs', 'maxSize', 'net', 'avgEntryPx', 'avgExitPx', 'strategies', 'reasons', 'mistakes', 'grade'];
 let cols = (() => { try { const v = JSON.parse(localStorage.getItem('okx.cols')); return Array.isArray(v) && v.every((x) => COLS[x]) && v.length ? v : DEFAULT_COLS; } catch { return DEFAULT_COLS; } })();
+// 체결 열이 생기기 전에 저장된 열 설정에는 한 번만 끼워 넣는다
+try { if (localStorage.getItem('okx.cols.v') !== '2') { if (!cols.includes('execs')) cols = [...cols.slice(0, 3), 'execs', ...cols.slice(3)]; localStorage.setItem('okx.cols.v', '2'); localStorage.setItem('okx.cols', JSON.stringify(cols)); } } catch { /* 저장 불가 환경 */ }
 const saveCols = () => { try { localStorage.setItem('okx.cols', JSON.stringify(cols)); } catch { /* 저장 불가 환경 */ } };
 
 let rr = null;
@@ -41,7 +47,7 @@ export function tradesView(rerender) {
   if (!r) return h('section', {}, '데이터가 없습니다. 설정에서 동기화하거나 CSV를 올리세요.');
   if (!r.trades.length) return h('section', {}, '거래 없음: 복원된 라운드트립이 0건입니다.');
   rr = rerender;
-  const jOf = (t) => S.linked?.byTrade.get(t.id) ?? [];
+  const jOf = (t) => S.byTrade?.get(t.id) ?? [];
   const q = ui.q.trim().toLowerCase();
   let list = r.trades.filter((t) => (ui.type === 'ALL' || t.instType === ui.type) && (ui.inst === 'ALL' || t.instId === ui.inst) && (ui.side === 'ALL' || t.side === ui.side)
     && (!q || [t.instId, t.side, ...jOf(t).flatMap((e) => [e.title, ...e.strategies, ...(e.reasons ?? []), ...e.mistakes, e.grade])].some((x) => String(x ?? '').toLowerCase().includes(q))));
@@ -87,7 +93,7 @@ export function tradesView(rerender) {
   const rows = list.map((x) => {
     const js = jOf(x);
     return h('tr', { class: x.id === t.id ? 'on' : null, onclick: () => { S.selTrade = x.id; mkt.inst = x.instId; rerender(); scrollTo({ top: 0, behavior: 'smooth' }); } },
-      h('td', { class: 'c0' }, icon('right', 13)), cols.map((c) => h('td', {}, COLS[c].cell(x, js))));
+      h('td', { class: 'c0' }, h('button', { class: 'open-btn', title: '복기 페이지 열기', onclick: (e) => { e.stopPropagation(); openReview(x.id); } }, '열기')), cols.map((c) => h('td', {}, COLS[c].cell(x, js))));
   });
   for (let i = rows.length; i < 8; i++) rows.push(h('tr', { class: 'empty' }, h('td', { class: 'c0' }), cols.map(() => h('td', {}))));
 
@@ -98,9 +104,17 @@ export function tradesView(rerender) {
         h('div', { class: 'row' }, tbtn('cols', 'sliders', '속성'), tbtn('filter', null, '필터'), tbtn('sort', null, '정렬'))),
       pop,
       h('div', { class: 'tbl' }, h('table', { class: 'notion' }, h('thead', {}, head), h('tbody', {}, rows))),
-      h('div', { class: 'mute foot' }, `${list.length}건 · 행을 누르면 위 차트와 일지가 바뀝니다. 평균 진입·청산가는 선물·마진만(현물은 -).`)));
+      h('div', { class: 'mute foot' }, `${list.length}건 · 행을 누르면 위 차트와 일지가 바뀌고, "열기"를 누르면 복기 페이지가 열립니다. 거래 1건 = 포지션 0→0(분할 진입·청산은 "체결"로 셉니다).`)));
 }
 
 function detail(t) {
-  return journalForTrade(t.id) ?? h('section', {}, h('h2', {}, '매매일지'), h('div', { class: 'mute' }, S.journal ? '-: 이 거래에 연결된 일지 없음' : '-: 일지를 불러오지 않았습니다(#/journal에서 노션 내보내기 파일 업로드)'));
+  const r = reviewOf(t.id), has = hasContent(r);
+  const head = h('div', { class: 'between' }, h('h2', { class: 'big' }, '매매일지'),
+    h('button', { class: 'sub acc', onclick: () => openReview(t.id) }, has ? '복기 열기' : '복기 쓰기'));
+  const summary = has ? h('div', { class: 'jtags' },
+    r.grade ? h('span', { class: 'grade' }, `등급 ${r.grade}`) : null,
+    r.strategies.map((x) => h('span', { class: 'chip blue' }, x)), r.reasons.map((x) => h('span', { class: 'chip green' }, x)), r.mistakes.map((x) => h('span', { class: 'chip red' }, x)),
+    r.feedback ? h('div', { class: 'mute' }, r.feedback) : null) : h('div', { class: 'mute' }, `-: 아직 쓴 복기가 없습니다 · 체결 ${t.execs?.length ?? 0}건`);
+  const notion = journalForTrade(t.id);
+  return h('div', {}, h('section', { class: 'jcard' }, head, summary), notion);
 }

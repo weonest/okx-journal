@@ -24,6 +24,8 @@ test('오픈→증가→감소→청산: 한 거래로 묶고 손익·수수료 
   assert.equal(t.fee, -3);
   assert.equal(t.net, 27);
   assert.equal(t.billIds.length, 4);
+  // 체결 4건이 한 거래 안에 순서대로 남는다(매수2·매도2)
+  assert.deepEqual(t.execs.map((e) => [e.side, e.kind, e.sz]), [['buy', 'in', 2], ['buy', 'in', 1], ['sell', 'out', 1], ['sell', 'out', 2]]);
 });
 
 test('플립: 닫힘과 새 오픈으로 나누고 수수료는 수량 비례', () => {
@@ -38,6 +40,8 @@ test('플립: 닫힘과 새 오픈으로 나누고 수수료는 수량 비례', 
   assert.equal(a.pnl, 8); assert.equal(a.fee, -1 - 2);
   assert.equal(b.side, 'short'); assert.equal(b.status, 'CLOSED');
   assert.equal(b.fee, -3 - 1); assert.equal(b.pnl, 4);
+  assert.deepEqual(a.execs.map((e) => [e.side, e.kind, e.sz]), [['buy', 'in', 2], ['sell', 'out', 2]]);
+  assert.deepEqual(b.execs.map((e) => [e.side, e.kind, e.sz]), [['sell', 'in', 3], ['buy', 'out', 3]]);
 });
 
 test('이자·펀딩 귀속: 구간 안은 거래에, 밖은 unattributed', () => {

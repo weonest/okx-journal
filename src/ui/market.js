@@ -123,6 +123,7 @@ async function drawChart(my, el, msg) {
     for (const t of mine) {
       const big = t.id === S.selTrade, long = t.side === 'long';
       const add = (ts, buy, text) => { const time = snap(ts); if (time != null) mk.push({ time, position: buy ? 'belowBar' : 'aboveBar', shape: buy ? 'arrowUp' : 'arrowDown', color: buy ? '#3ecf8e' : '#f0616d', size: big ? 2 : 1, text: big ? text : '' }); };
+      if (big && t.execs?.length) { for (const e of t.execs) add(e.ts, e.side === 'buy', e.side === 'buy' ? 'B' : 'S'); continue; } // 선택 거래는 체결마다 B/S
       add(t.openTs, long, '진입');
       if (t.closeTs != null) add(t.closeTs, !long, '청산');
     }

@@ -11,6 +11,13 @@ function accPx(t, kind, sz, px) {
   t[kind + 'Qty'] = (t[kind + 'Qty'] ?? 0) + sz; t[kind + 'Cost'] = (t[kind + 'Cost'] ?? 0) + sz * px;
 }
 
+/** 체결 1건 기록(표·차트·일지용). 롱은 진입=매수, 숏은 진입=매도. 금액 합계에는 쓰지 않는다. */
+function addExec(t, b, kind, sz, pnl, fee) {
+  if (!(sz > 0)) return;
+  const buy = (kind === 'in') === (t.side === 'long');
+  t.execs.push({ ts: b.ts, billId: b.billId, ordId: b.ordId || null, side: buy ? 'buy' : 'sell', kind, sz, px: b.px ?? null, pnl, fee, ccy: b.ccy ?? null });
+}
+
 function addAmt(t, ccy, part) {
   const c = ccy ?? '?';
   const a = (t.amounts[c] ??= emptyAmt());
@@ -48,7 +55,7 @@ export function buildPositions(rows, opts = {}) {
     const t = {
       id: `${row.key}#${row.bill.billId}`, instType: row.bill.instType, instId: row.instId, key: row.key, side,
       openTs: row.bill.ts, closeTs: null, maxSize: size, size, status: 'OPEN', closeReason: null,
-      amounts: {}, billIds: [], mgnMode: row.bill.mgnMode ?? null,
+      amounts: {}, billIds: [], execs: [], mgnMode: row.bill.mgnMode ?? null,
     };
     cur.set(row.key, t);
     trades.push(t);
@@ -68,19 +75,19 @@ export function buildPositions(rows, opts = {}) {
       const fee = b.fee ?? 0;
       if (row.effect === 'OPEN') {
         const t = start(row, row.dirAfter, Math.abs(row.rem));
-        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee }); accPx(t, 'in', row.openSz, b.px);
+        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee }); accPx(t, 'in', row.openSz, b.px); addExec(t, b, 'in', row.openSz, pnl, fee);
       } else if (row.effect === 'FLIP') {
         const t = cur.get(row.key);
         const share = row.closeSz / (row.closeSz + row.openSz); // 수수료는 수량 비례로 나눈다
-        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee: fee * share }); accPx(t, 'out', row.closeSz, b.px);
+        t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee: fee * share }); accPx(t, 'out', row.closeSz, b.px); addExec(t, b, 'out', row.closeSz, pnl, fee * share);
         close(t, row);
         const n = start(row, row.dirAfter, row.openSz);
-        n.billIds.push(b.billId); addAmt(n, b.ccy, { fee: fee * (1 - share) }); accPx(n, 'in', row.openSz, b.px);
+        n.billIds.push(b.billId); addAmt(n, b.ccy, { fee: fee * (1 - share) }); accPx(n, 'in', row.openSz, b.px); addExec(n, b, 'in', row.openSz, 0, fee * (1 - share));
       } else {
         const t = cur.get(row.key);
         if (!t) { orphans.push({ billId: b.billId, instId: row.instId, ts: b.ts, reason: '열린 구간 없음' }); continue; }
         t.billIds.push(b.billId); addAmt(t, b.ccy, { pnl, fee });
-        if (row.effect === 'INCREASE') accPx(t, 'in', row.openSz, b.px); else accPx(t, 'out', row.closeSz, b.px);
+        if (row.effect === 'INCREASE') { accPx(t, 'in', row.openSz, b.px); addExec(t, b, 'in', row.openSz, pnl, fee); } else { accPx(t, 'out', row.closeSz, b.px); addExec(t, b, 'out', row.closeSz, pnl, fee); }
         t.size = Math.abs(row.rem);
         if (t.size > t.maxSize) t.maxSize = t.size;
         if (row.effect === 'CLOSE') close(t, row);
