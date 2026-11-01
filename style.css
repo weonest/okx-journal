@@ -331,3 +331,8 @@ section code{overflow-wrap:anywhere;word-break:break-all}
 .pnl-read .lg.lg-bar::before{height:10px;width:8px;border-radius:1px;background:linear-gradient(var(--up) 50%,var(--down) 50%)}
 /* KPI 카드는 데스크톱 4열 고정(주요·보조 줄 맞춤), 좁은 화면은 아래 2열 규칙 */
 @media(min-width:801px){.grid:has(.kpi){grid-template-columns:repeat(4,minmax(0,1fr))}}
+/* 이미지 크게 보기 */
+.lb{position:fixed;inset:0;z-index:60;background:rgba(0,0,0,.88);display:flex;flex-direction:column;align-items:center;justify-content:center;padding:16px;box-sizing:border-box;cursor:zoom-out}
+.lb img{max-width:100%;max-height:calc(100% - 48px);object-fit:contain;border-radius:6px}
+.lb-bar{display:flex;align-items:center;gap:12px;margin-top:10px}
+.lb-bar a{color:var(--fg);text-decoration:none;border:1px solid var(--line);border-radius:6px;padding:4px 10px}
