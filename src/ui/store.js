@@ -1,12 +1,12 @@
 // 화면 상태. 키는 기본 sessionStorage, "이 기기에 기억"을 켠 때만 localStorage.
 import { linkJournal, journalStats } from '../core/notion.js';
 import { emptyRaw, concatRaw, analyze, ingestCsv, fromApi } from '../core/pipeline.js';
-import { mergeByTrade, emptyReview } from '../core/review.js';
+import { mergeByTrade, emptyReview, mockTrades, newMock, MOCK_PREFIX } from '../core/review.js';
 import { mergeRaw } from '../core/drive.js';
 
 export const S = {
   api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, journal: null, linked: null, selTrade: null, jstats: null, lastSync: null, error: null,
-  reviews: {}, demoReviews: {}, byTrade: new Map(), // 앱 안 복기(거래 id → 복기). 예시 데이터일 때는 demoReviews(저장 안 함)
+  reviews: {}, demoReviews: {}, byTrade: new Map(), mocks: [], // mocks: 모의 매매(복기 저장소에 mock: 키로 둔다) // 앱 안 복기(거래 id → 복기). 예시 데이터일 때는 demoReviews(저장 안 함)
   usdRate: null, // 환산 기준 주입 자리(8단계에서는 없음 → USD 합계 '-')
 };
 const subs = new Set();
@@ -25,6 +25,7 @@ export function recompute() {
 function relink() {
   S.linked = S.journal && S.result ? linkJournal(S.journal.entries, S.result.trades) : null;
   S.byTrade = mergeByTrade(S.linked?.byTrade, reviews());
+  S.mocks = mockTrades(reviews());
   S.jstats = S.result && S.byTrade.size ? journalStats(S.byTrade, S.result.trades) : null;
 }
 
@@ -44,6 +45,14 @@ export function replaceReviews(m) {
   tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {});
   if (!S.sample) { relink(); subs.forEach((f) => f()); }
 }
+/** 모의 매매 만들기 → id. 값은 복기 페이지에서 직접 입력한다. */
+export function createMock(opts) {
+  const id = MOCK_PREFIX + crypto.randomUUID();
+  saveReview(id, newMock(opts));
+  return id;
+}
+/** 복기·모의 매매 삭제: 다른 기기와 합칠 때 되살아나지 않게 삭제 표시를 남긴다. */
+export function deleteReview(id) { saveReview(id, { deleted: true }); }
 // 이미지 원본 캐시(복기에는 id만 둔다)
 export const kvGet = (k) => tx('readonly', (st) => st.get(k)).catch(() => null);
 export const kvPut = (k, v) => tx('readwrite', (st) => st.put(v, k)).catch(() => {});

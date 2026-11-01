@@ -11,7 +11,7 @@ export const IMG_DIR = '이미지';
 export const REVIEWS_FILE = 'reviews.json';
 export const DATA_FILE = 'okx-data.json';
 
-export class DriveAuthError extends Error { constructor() { super('Google 로그인이 만료되었습니다'); this.code = 401; } }
+export class DriveAuthError extends Error { constructor(scope = false) { super(scope ? '권한 범위 부족' : 'Google 로그인이 만료되었습니다'); this.code = scope ? 403 : 401; this.scope = scope; } }
 
 /** @param {typeof fetch} fetch @param {() => string|null} getToken */
 export function createDrive(fetch, getToken) {
@@ -20,7 +20,11 @@ export function createDrive(fetch, getToken) {
     if (!tok) throw new DriveAuthError();
     const r = await fetch(url, { ...init, headers: { ...(init.headers ?? {}), Authorization: 'Bearer ' + tok } });
     if (r.status === 401) throw new DriveAuthError();
-    if (!r.ok) throw new Error(`Drive ${r.status}: ${(await r.text()).slice(0, 200)}`);
+    if (!r.ok) {
+      const t = await r.text();
+      if (r.status === 403 && /scope|insufficient/i.test(t)) throw new DriveAuthError(true); // 로그인 때 받은 권한이 모자람
+      throw new Error(`Drive ${r.status}: ${t.slice(0, 200)}`);
+    }
     return r;
   };
   const multipart = (meta, body, mime) => {

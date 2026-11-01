@@ -4,15 +4,16 @@ import { journalForTrade } from './journal.js';
 import { mkt } from './market.js';
 import { openReview } from './review.js';
 import { hasContent } from '../core/review.js';
-import { reviewOf } from './store.js';
+import { reviewOf, createMock } from './store.js';
 
-const ui = { type: 'ALL', inst: 'ALL', side: 'ALL', sort: 'openTs', dir: -1, q: '', pop: null, more: false };
+const ui = { type: 'ALL', kind: 'ALL', inst: 'ALL', side: 'ALL', sort: 'openTs', dir: -1, q: '', pop: null, more: false };
 
 const px = (v) => (v == null ? '-' : fmtNum(v, Math.abs(v) < 10 ? 4 : 2));
 const chips = (a) => (a.length ? a.map((x) => h('span', { class: 'tag sym' }, x)) : '-');
 // 열 정의: id → 라벨·아이콘·셀·정렬값. js()는 연결된 일지 항목.
 const COLS = {
   openTs: { label: '매매일', icon: 'calendar', cell: (t) => fmtTs(t.openTs), val: (t) => t.openTs },
+  mock: { label: '모의', icon: 'flask', cell: (t) => (t.mock ? h('span', { class: 'chip mock' }, '모의') : '-'), val: (t) => (t.mock ? 1 : 0) },
   instId: { label: '종목명', icon: 'lines', cell: (t) => t.instId.replace('-SWAP', ''), val: (t) => t.instId },
   side: { label: 'SIDE', icon: 'target', cell: (t) => h('span', { class: 'tag ' + t.side }, t.side.toUpperCase()), val: (t) => t.side },
   execs: { label: '체결', icon: 'hash', cell: (t) => (t.execs?.length ? `${t.execs.length}건` : '-'), val: (t) => t.execs?.length ?? 0 },
@@ -27,13 +28,23 @@ const COLS = {
   instType: { label: '상품군', icon: 'lines', cell: (t) => t.instType, val: (t) => t.instType },
   hold: { label: '보유 시간', icon: 'hash', cell: (t) => (t.closeTs != null ? fmtDur(t.closeTs - t.openTs) : '-'), val: (t) => (t.closeTs != null ? t.closeTs - t.openTs : null) },
   closeTs: { label: '청산일', icon: 'calendar', cell: (t) => fmtTs(t.closeTs), val: (t) => t.closeTs },
-  fee: { label: '수수료', icon: 'hash', cell: (t) => fmtNum(t.fee, 4), val: (t) => t.fee },
+  fee: { label: '수수료', icon: 'hash', cell: (t) => (t.fee == null ? (t.ccy ? '-' : '통화 여럿') : h('span', { class: 'fee' }, fmtNum(t.fee, 4) + ' ' + t.ccy)), val: (t) => t.fee },
   status: { label: '상태', icon: 'target', cell: (t) => t.status, val: (t) => t.status },
 };
-const DEFAULT_COLS = ['openTs', 'instId', 'side', 'execs', 'maxSize', 'net', 'avgEntryPx', 'avgExitPx', 'strategies', 'reasons', 'mistakes', 'grade'];
+const DEFAULT_COLS = ['openTs', 'mock', 'instId', 'side', 'execs', 'maxSize', 'net', 'fee', 'avgEntryPx', 'avgExitPx', 'strategies', 'reasons', 'mistakes', 'grade'];
 let cols = (() => { try { const v = JSON.parse(localStorage.getItem('okx.cols')); return Array.isArray(v) && v.every((x) => COLS[x]) && v.length ? v : DEFAULT_COLS; } catch { return DEFAULT_COLS; } })();
 // 체결 열이 생기기 전에 저장된 열 설정에는 한 번만 끼워 넣는다
-try { if (localStorage.getItem('okx.cols.v') !== '2') { if (!cols.includes('execs')) cols = [...cols.slice(0, 3), 'execs', ...cols.slice(3)]; localStorage.setItem('okx.cols.v', '2'); localStorage.setItem('okx.cols', JSON.stringify(cols)); } } catch { /* 저장 불가 환경 */ }
+try {
+  const v = localStorage.getItem('okx.cols.v');
+  if (v !== '3' && v !== '4') {
+    if (v !== '2' && !cols.includes('execs')) cols = [...cols.slice(0, 3), 'execs', ...cols.slice(3)];
+    if (!cols.includes('mock')) cols = [...cols.slice(0, 1), 'mock', ...cols.slice(1)]; // 모의 열
+  }
+  if (v !== '4') {
+    if (!cols.includes('fee')) { const i = cols.indexOf('net'); cols = i < 0 ? [...cols, 'fee'] : [...cols.slice(0, i + 1), 'fee', ...cols.slice(i + 1)]; } // 수수료 열
+    localStorage.setItem('okx.cols.v', '4'); localStorage.setItem('okx.cols', JSON.stringify(cols));
+  }
+} catch { /* 저장 불가 환경 */ }
 const saveCols = () => { try { localStorage.setItem('okx.cols', JSON.stringify(cols)); } catch { /* 저장 불가 환경 */ } };
 
 let rr = null;
@@ -44,18 +55,20 @@ if (!window.__popClose) { // 팝오버 바깥을 누르면 닫는다(한 번만 
 
 export function tradesView(rerender) {
   const r = S.result;
-  if (!r) return h('section', {}, '데이터가 없습니다. 설정에서 동기화하거나 CSV를 올리세요.');
-  if (!r.trades.length) return h('section', {}, '거래 없음: 복원된 라운드트립이 0건입니다.');
+  const addMock = () => { const id = createMock({ instId: mkt.inst && mkt.inst !== '-' ? mkt.inst : '', side: 'long', ts: Date.now() }); S.selTrade = id; openReview(id); };
+  const mockBtn = h('button', { class: 'tbtn acc', title: '실제로 체결하지 않은 가상 매매를 직접 입력해 복기합니다', onclick: addMock }, icon('plus', 15), '모의 매매');
+  const all = [...(r?.trades ?? []), ...S.mocks];
+  if (!all.length) return h('section', {}, h('div', {}, r ? '거래 없음: 복원된 라운드트립이 0건입니다.' : '데이터가 없습니다. 설정에서 동기화하거나 CSV를 올리세요.'), h('div', { class: 'row', style: 'margin-top:8px' }, mockBtn, h('span', { class: 'mute' }, '또는 모의 매매를 직접 입력해 복기할 수 있습니다.')));
   rr = rerender;
   const jOf = (t) => S.byTrade?.get(t.id) ?? [];
   const q = ui.q.trim().toLowerCase();
-  let list = r.trades.filter((t) => (ui.type === 'ALL' || t.instType === ui.type) && (ui.inst === 'ALL' || t.instId === ui.inst) && (ui.side === 'ALL' || t.side === ui.side)
+  let list = all.filter((t) => (ui.type === 'ALL' || t.instType === ui.type) && (ui.kind === 'ALL' || (ui.kind === 'MOCK') === !!t.mock) && (ui.inst === 'ALL' || t.instId === ui.inst) && (ui.side === 'ALL' || t.side === ui.side)
     && (!q || [t.instId, t.side, ...jOf(t).flatMap((e) => [e.title, ...e.strategies, ...(e.reasons ?? []), ...e.mistakes, e.grade])].some((x) => String(x ?? '').toLowerCase().includes(q))));
   const key = (COLS[ui.sort] ?? COLS.openTs).val ?? COLS.openTs.val;
   list = [...list].sort((a, b) => ((key(a) ?? -Infinity) > (key(b) ?? -Infinity) ? 1 : (key(a) ?? -Infinity) < (key(b) ?? -Infinity) ? -1 : 0) * ui.dir);
 
-  let t = r.trades.find((x) => x.id === S.selTrade);
-  if (!t) t = list.find((x) => x.instId === mkt.inst) ?? list[0] ?? r.trades.at(-1);
+  let t = all.find((x) => x.id === S.selTrade);
+  if (!t) t = list.find((x) => x.instId === mkt.inst) ?? list[0] ?? all.at(-1);
   if (S.selTrade !== t.id) { S.selTrade = t.id; mkt.inst = t.instId; }
 
   const open = (name) => () => { ui.pop = ui.pop === name ? null : name; rerender(); };
@@ -76,10 +89,11 @@ export function tradesView(rerender) {
       ui.more ? (hidden.length ? hidden.map((c) => h('div', { class: 'pop-r click', onclick: () => { cols = [...cols, c]; saveCols(); rerender(); } }, icon(COLS[c].icon, 14), h('span', { class: 'grow' }, COLS[c].label), icon('plus', 14))) : h('div', { class: 'mute pad' }, '추가할 속성이 없습니다')) : null);
   } else if (ui.pop === 'filter') {
     pop = h('div', { class: 'pop' }, h('div', { class: 'pop-h' }, h('strong', {}, '필터')),
+      h('label', {}, '구분'), sel([['ALL', '전체'], ['REAL', '실거래'], ['MOCK', '모의 매매']], ui.kind, (v) => (ui.kind = v)),
       h('label', {}, '상품군'), sel(['ALL', 'FUTURES', 'SPOT', 'MARGIN'].map((v) => [v, v]), ui.type, (v) => (ui.type = v)),
-      h('label', {}, '종목'), sel([['ALL', 'ALL'], ...[...new Set(r.trades.map((x) => x.instId))].map((v) => [v, v])], ui.inst, (v) => (ui.inst = v)),
+      h('label', {}, '종목'), sel([['ALL', 'ALL'], ...[...new Set(all.map((x) => x.instId))].map((v) => [v, v])], ui.inst, (v) => (ui.inst = v)),
       h('label', {}, '방향'), sel([['ALL', 'ALL'], ['long', 'LONG'], ['short', 'SHORT']], ui.side, (v) => (ui.side = v)),
-      h('button', { class: 'add', onclick: () => { ui.type = ui.inst = ui.side = 'ALL'; rerender(); } }, '초기화'));
+      h('button', { class: 'add', onclick: () => { ui.type = ui.kind = ui.inst = ui.side = 'ALL'; rerender(); } }, '초기화'));
   } else if (ui.pop === 'sort') {
     pop = h('div', { class: 'pop' }, h('div', { class: 'pop-h' }, h('strong', {}, '정렬')),
       sel(Object.entries(COLS).filter(([, c]) => c.val).map(([id, c]) => [id, c.label]), ui.sort, (v) => (ui.sort = v)),
@@ -101,7 +115,7 @@ export function tradesView(rerender) {
     detail(t),
     h('section', { class: 'nt' },
       h('div', { class: 'between nt-bar' }, h('div', { class: 'sbox' }, icon('search', 16), search),
-        h('div', { class: 'row' }, tbtn('cols', 'sliders', '속성'), tbtn('filter', null, '필터'), tbtn('sort', null, '정렬'))),
+        h('div', { class: 'row' }, mockBtn, tbtn('cols', 'sliders', '속성'), tbtn('filter', null, '필터'), tbtn('sort', null, '정렬'))),
       pop,
       h('div', { class: 'tbl' }, h('table', { class: 'notion' }, h('thead', {}, head), h('tbody', {}, rows))),
       h('div', { class: 'mute foot' }, `${list.length}건 · 행을 누르면 위 차트와 일지가 바뀌고, "열기"를 누르면 복기 페이지가 열립니다. 거래 1건 = 포지션 0→0(분할 진입·청산은 "체결"로 셉니다).`)));

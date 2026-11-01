@@ -6,8 +6,8 @@ import { S, save, load, isRemembering, setReviewHook, replaceReviews, kvGet, kvP
 import { createDrive, mergeReviews, forCloud, pendingImages, imageName, mergeData, hasData, ROOT_NAME, IMG_DIR, REVIEWS_FILE, DATA_FILE, DriveAuthError } from '../core/drive.js';
 import { GOOGLE_CLIENT_ID } from './config.js';
 
-// drive.appdata는 예전 숨김 폴더에서 옮겨 오기 위해서만 함께 요청한다
-const SCOPE = 'https://www.googleapis.com/auth/drive.file https://www.googleapis.com/auth/drive.appdata';
+const SCOPE = 'https://www.googleapis.com/auth/drive.file';
+const APPDATA = 'https://www.googleapis.com/auth/drive.appdata'; // 예전 숨김 폴더: 이미 허용된 경우에만 옮겨 온다
 const ON = 'okx.gdrive'; // 연결을 켠 기기 표시(비밀 아님)
 const safe = (f) => { try { return f(); } catch { return null; } };
 
@@ -21,10 +21,13 @@ export const clientId = () => load('gcid') || GOOGLE_CLIENT_ID;
 export const setClientId = (v) => save('gcid', v.trim(), true);
 export const isOn = () => safe(() => localStorage.getItem(ON) === '1') === true;
 
+const tok = () => safe(() => JSON.parse(load('gtok')));
 function token() {
-  const j = safe(() => JSON.parse(load('gtok')));
+  const j = tok();
   return j && j.exp > Date.now() ? j.t : null;
 }
+/** 로그인 때 실제로 받은 권한(scope 없으면 예전 토큰 → 모름) */
+const granted = (s) => (tok()?.scope ?? '').split(' ').includes(s);
 const drive = createDrive((...a) => fetch(...a), token);
 
 // 로그인 응답(#access_token=...)은 앱이 화면을 그리기 전에 처리하고 원래 화면 주소로 되돌린다.
@@ -38,7 +41,7 @@ const drive = createDrive((...a) => fetch(...a), token);
   if (p.get('error')) { C.state = 'error'; C.msg = 'Google 로그인 취소 또는 실패: ' + p.get('error'); return; }
   if (!want || p.get('state') !== want) { C.state = 'error'; C.msg = '로그인 응답 검증 실패(state 불일치)'; return; }
   const exp = Date.now() + (Number(p.get('expires_in')) || 3600) * 1000 - 60_000;
-  save('gtok', JSON.stringify({ t: p.get('access_token'), exp }), isRemembering());
+  save('gtok', JSON.stringify({ t: p.get('access_token'), exp, scope: p.get('scope') ?? '' }), isRemembering());
   safe(() => localStorage.setItem(ON, '1'));
 })();
 
@@ -81,6 +84,7 @@ const META = {
 /** 새 폴더에 아직 reviews.json이 없을 때 1회: 예전 숨김 폴더의 복기를 가져오고, 이미지는 이 기기에 받아 둔 뒤 새 폴더로 다시 올리게 한다. */
 async function fromLegacy(local) {
   let old = {};
+  if (!granted(APPDATA)) return local;
   try { const f = await drive.findAppData(REVIEWS_FILE); if (f) old = (await drive.getJson(f.id)).reviews ?? {}; } catch (e) { if (e instanceof DriveAuthError) throw e; }
   const { merged } = mergeReviews(local, old);
   for (const r of Object.values(merged)) for (const im of r.images ?? []) {
@@ -94,6 +98,7 @@ async function fromLegacy(local) {
 async function run() {
   if (S.sample || !isOn()) return;
   if (!token()) { set('expired', '연결이 만료되었습니다. 다시 연결을 누르세요(변경분은 이 기기에 남아 있다가 연결되면 올라갑니다).'); return; }
+  if (!granted(SCOPE)) { set('expired', '드라이브 폴더 권한이 없습니다. "다시 연결"을 누르고 구글 화면에서 권한을 모두 허용하세요.'); return; }
   set('syncing');
   try {
     const d = await folders();
@@ -102,7 +107,7 @@ async function run() {
     set('ok', msgs.join(' · '));
   } catch (e) {
     dirs = null; // 폴더를 휴지통에 넣은 경우 등: 다음에 다시 찾는다
-    if (e instanceof DriveAuthError) set('expired', '연결이 만료되었습니다. 다시 연결을 누르세요.');
+    if (e instanceof DriveAuthError) set('expired', e.scope ? '드라이브 폴더 권한이 없습니다. "다시 연결"을 누르고 구글 화면에서 권한을 모두 허용하세요.' : '연결이 만료되었습니다. 다시 연결을 누르세요.');
     else set('error', e.message);
   }
 }
@@ -180,7 +185,7 @@ export function startCloud() {
   if (isOn()) sync(); else set('off');
 }
 
-const LABEL = { off: '연결 안 됨', syncing: '동기화 중…', ok: '동기화됨', expired: '연결 만료', error: '오류' };
+const LABEL = { off: '연결 안 됨', syncing: '동기화 중…', ok: '동기화됨', expired: '다시 연결 필요', error: '오류' };
 /** 짧은 상태 표시(복기 페이지·설정 공용). */
 export function cloudBadge() {
   const el = h('span', { class: 'cloud-st' });

@@ -66,6 +66,8 @@ test('createDrive: 토큰 없음·401은 DriveAuthError, 그 밖의 실패는 Er
   await assert.rejects(createDrive(async () => res(200, {}), () => null).findTagged('x'), DriveAuthError);
   await assert.rejects(createDrive(async () => res(401, {}), () => 't').findTagged('x'), DriveAuthError);
   await assert.rejects(createDrive(async () => res(500, { e: 1 }), () => 't').findTagged('x'), /Drive 500/);
+  // 받은 권한이 모자라면 scope 표시가 붙은 DriveAuthError(다시 연결 안내용)
+  await assert.rejects(createDrive(async () => res(403, { error: { message: 'The granted scopes do not give access to all of the requested spaces.' } }), () => 't').findTagged('x'), (e) => e instanceof DriveAuthError && e.scope === true);
 });
 
 const raw = (o = {}) => ({ Order: [], Fill: [], Bill: [], PositionHistory: [], Position: [], balance: [], instruments: [], subtypes: [], ...o });

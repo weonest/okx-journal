@@ -46,38 +46,38 @@ export function dashboardView(rerender) {
   const rangeTabs = seg(RANGES, ui.range, (v) => { ui.range = v; rerender(); });
   const rangeLabel = ui.range == null ? '전체' : `${ui.range}일`;
 
-  // 기간 손익 + 누적 차트
-  const lineEl = h('div', { class: 'chart', style: 'height:240px' });
-  const top = h('section', {},
+  // 손익 패널: 누적 손익(위) + 일간 PnL(아래)을 한 차트에, 옆에 PnL 분석
+  const chartEl = h('div', { class: 'chart', style: 'height:340px' });
+  const readDate = h('span', { class: 'mute' }), readVal = h('strong', {});
+  const pnl = h('section', {},
     h('div', { class: 'between' }, h('h2', { class: 'big' }, `${rangeLabel} 손익`), rangeTabs),
     h('div', { class: 'bignum', ...metaOf(per) }, P ? h('span', { class: cls(P.sum) }, (P.sum > 0 ? '+' : '') + fmtNum(P.sum)) : '-', h('small', {}, ' ' + (ui.ccy ?? ''))),
-    P ? lineEl : h('div', { class: 'mute' }, '-: ' + per.note));
-
-  // 일간 PnL + 분석
-  const readDate = h('div', { class: 'mute' }), readVal = h('div', { class: 'bignum' });
-  const barEl = h('div', { class: 'chart', style: 'height:240px' });
-  const daily = h('section', {}, h('div', { class: 'between' }, h('h2', { class: 'big' }, '일간 PnL')), readDate, readVal, P ? barEl : h('div', { class: 'mute' }, '-'));
+    P ? [h('div', { class: 'row small pnl-read' }, h('span', { class: 'lg lg-cum' }, '누적 손익'), h('span', { class: 'lg lg-bar' }, '일간 손익'), h('span', { class: 'grow' }), readDate, '일간', readVal), chartEl]
+      : h('div', { class: 'mute' }, '-: ' + per.note));
   const stat = (k, v, c) => h('div', { class: 'stat' }, h('div', { class: 'k' }, k), h('div', { class: 'sv ' + (c ?? '') }, v));
   const analysis = h('section', { ...metaOf(per) }, h('h2', { class: 'big' }, 'PnL 분석'),
     stat('일 승률 (수익일/거래일)', P?.dayWinRate == null ? '-' : fmtPct(P.dayWinRate)),
     h('div', { class: 'two' }, stat('수익일', P ? String(P.profitDays) : '-', 'up'), stat('손실일', P ? String(P.lossDays) : '-', 'down')),
     h('div', { class: 'two' }, stat('누적 이익', P ? '+' + fmtNum(P.grossProfit) : '-', 'up'), stat('누적 손실', P ? fmtNum(P.grossLoss) : '-', 'down')));
-  setTimeout(() => drawCharts(lineEl, barEl, P, readDate, readVal), 0);
+  setTimeout(() => drawPnl(chartEl, P, readDate, readVal), 0);
 
   const wl = m.winLoss.value[ui.ccy];
+  const t = totals[ui.ccy];
   const main = h('div', { class: 'grid' },
-    card(`누적 순손익 (${ui.ccy ?? '-'})`, { ...m.totals, value: ui.ccy && totals[ui.ccy] ? totals[ui.ccy].net : null }, fmtNum(totals[ui.ccy]?.net), '수수료·펀딩·이자 반영 후', 'trend', cls(totals[ui.ccy]?.net)),
+    card(`누적 순손익 (${ui.ccy ?? '-'})`, { ...m.totals, value: ui.ccy && t ? t.net : null }, fmtNum(t?.net), '수수료·펀딩·이자 반영 후', 'trend', cls(t?.net)),
     card('거래 승률', m.winRate, fmtPct(m.winRate.value), `청산 ${m.count.value}건`, 'percent', 'up'),
     card('손익비 (평균이익/평균손실)', { ...m.winLoss, value: wl?.payoff ?? null }, fmtNum(wl?.payoff), wl?.avgWin != null && wl?.avgLoss != null ? `${fmtNum(wl.avgWin)} / ${fmtNum(wl.avgLoss)}` : null, 'award', 'gold'),
     card('최대 낙폭 (MDD)', { ...m.mdd, value: m.mdd.value[ui.ccy] ?? null }, fmtNum(m.mdd.value[ui.ccy]), '누적 순손익 고점 대비', 'alert', 'down'));
-  const more = h('details', {}, h('summary', {}, '지표 더 보기'), h('div', { class: 'grid' },
-    card('USD 합계', m.usdNet, fmtNum(m.usdNet.value)),
-    card('평균 이익', { ...m.winLoss, value: wl?.avgWin ?? null }, fmtNum(wl?.avgWin)),
-    card('평균 손실', { ...m.winLoss, value: wl?.avgLoss ?? null }, fmtNum(wl?.avgLoss)),
-    card('평균 보유시간', m.avgHoldMs, fmtDur(m.avgHoldMs.value)),
-    card('롱 / 숏', m.sides, `${m.sides.value?.long} / ${m.sides.value?.short}`),
-    card('일 평균 거래', m.perDay, fmtNum(m.perDay.value)),
-    card('최대 노출', m.maxExposure, fmtNum(m.maxExposure.value))));
+  // 보조 지표: 주요 지표와 같은 카드 모양으로 펼쳐 둔다(접기 없음)
+  const sub = h('div', { class: 'grid' },
+    card(`수수료 (${ui.ccy ?? '-'})`, { ...m.totals, value: ui.ccy && t ? t.fee : null }, fmtNum(t?.fee, 4), '청산 거래 합계', 'hash', 'fee'),
+    card('평균 이익', { ...m.winLoss, value: wl?.avgWin ?? null }, fmtNum(wl?.avgWin), '이긴 거래 1건당', 'trend', 'up'),
+    card('평균 손실', { ...m.winLoss, value: wl?.avgLoss ?? null }, fmtNum(wl?.avgLoss), '진 거래 1건당', 'alert', 'down'),
+    card('평균 보유시간', m.avgHoldMs, fmtDur(m.avgHoldMs.value), '진입부터 청산까지', 'calendar', 'mute'),
+    card('롱 / 숏', m.sides, `${m.sides.value?.long} / ${m.sides.value?.short}`, '거래 수', 'target', 'mute'),
+    card('일 평균 거래', m.perDay, fmtNum(m.perDay.value), '거래일 기준', 'pulse', 'mute'),
+    card('최대 노출', m.maxExposure, fmtNum(m.maxExposure.value), null, 'chart', 'mute'),
+    card('USD 합계', m.usdNet, fmtNum(m.usdNet.value), null, 'lines', 'mute'));
 
   const GROUPS = {
     '상품군': () => ['FUTURES', 'SPOT', 'MARGIN'].map((k) => [k, r.metrics[k]]),
@@ -85,29 +85,28 @@ export function dashboardView(rerender) {
     '롱 / 숏': () => Object.entries(r.groups.side),
   };
   return h('div', {},
-    filters, main, top,
-    h('div', { class: 'split' }, daily, analysis),
-    h('section', {}, more),
+    filters, main, sub,
+    h('div', { class: 'split' }, pnl, analysis),
     h('section', {}, h('div', { class: 'between' }, h('h2', {}, '구분별 성과'), seg(Object.keys(GROUPS).map((k) => [k, k]), ui.grp, (v) => { ui.grp = v; rerender(); })), groupTable(GROUPS[ui.grp]())));
 }
 
-function drawCharts(lineEl, barEl, P, readDate, readVal) {
-  if (!P || !P.points.length || !lineEl.isConnected) return;
-  const base = (el, hgt) => ({ ...CH, width: el.clientWidth, height: hgt, handleScroll: false, handleScale: false });
-  const a = createChart(lineEl, base(lineEl, 240));
-  const area = a.addAreaSeries({ lineColor: '#3ecf8e', topColor: 'rgba(62,207,142,.25)', bottomColor: 'rgba(62,207,142,0)', lineWidth: 2 });
+function drawPnl(el, P, readDate, readVal) {
+  if (!P || !P.points.length || !el.isConnected) return;
+  const c = createChart(el, { ...CH, width: el.clientWidth, height: 340, handleScroll: false, handleScale: false });
+  // 누적은 위 60%, 일간 막대는 아래 30%에 따로 눈금을 둔다
+  // 채우기 없는 선: 아래 일간 막대를 덮지 않게 한다
+  const area = c.addLineSeries({ color: '#3ecf8e', lineWidth: 2, priceScaleId: 'right' });
+  area.priceScale().applyOptions({ scaleMargins: { top: 0.06, bottom: 0.42 } });
   area.setData(P.points.map((e) => ({ time: e.day, value: e.cum })));
-  a.timeScale().fitContent();
-  const b = createChart(barEl, base(barEl, 240));
-  const bars = b.addHistogramSeries({});
+  const bars = c.addHistogramSeries({ priceScaleId: 'daily', priceFormat: { type: 'price', precision: 2, minMove: 0.01 }, lastValueVisible: false, priceLineVisible: false });
+  bars.priceScale().applyOptions({ scaleMargins: { top: 0.68, bottom: 0 } });
   bars.setData(P.points.map((e) => ({ time: e.day, value: e.net, color: e.net >= 0 ? '#3ecf8e' : '#f0616d' })));
-  b.timeScale().fitContent();
-  const show = (day, v) => { readDate.textContent = day; readVal.textContent = (v > 0 ? '+' : '') + fmtNum(v); readVal.className = 'bignum ' + cls(v); };
+  c.timeScale().fitContent();
+  const show = (day, v) => { readDate.textContent = day; readVal.textContent = (v > 0 ? '+' : '') + fmtNum(v); readVal.className = cls(v); };
   const last = P.points.at(-1);
   show(last.day, last.net);
-  b.subscribeCrosshairMove((p) => { const d = p.time && p.seriesData.get(bars); if (d) show(String(p.time), d.value); else show(last.day, last.net); });
-  const ro = new ResizeObserver(() => { a.applyOptions({ width: lineEl.clientWidth }); b.applyOptions({ width: barEl.clientWidth }); });
-  ro.observe(lineEl);
+  c.subscribeCrosshairMove((p) => { const d = p.time && p.seriesData.get(bars); if (d) show(String(p.time), d.value); else show(last.day, last.net); });
+  new ResizeObserver(() => c.applyOptions({ width: el.clientWidth })).observe(el);
 }
 
 const NS = 'http://www.w3.org/2000/svg';

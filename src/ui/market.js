@@ -98,7 +98,7 @@ async function candlesFor(inst, bar, ms, from, to) {
 async function drawChart(my, el, msg) {
   try {
     const inst = mkt.inst, [bar, ms] = BARS.find(([b]) => b === mkt.bar);
-    const mine = (S.result?.trades ?? []).filter((t) => t.instId === inst);
+    const mine = [...(S.result?.trades ?? []), ...S.mocks].filter((t) => t.instId === inst); // 모의 매매도 진입·청산 표시
     const sel = mine.find((t) => t.id === S.selTrade);
     const now = Date.now();
     let from, to = now, view = null;

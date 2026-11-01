@@ -22,7 +22,7 @@ export const parseTags = (s) => [...new Set(String(s ?? '').split(',').map((x) =
 
 /** 내용이 하나라도 있으면 true(빈 복기는 통계·목록에서 뺀다). */
 export function hasContent(r) {
-  if (!r) return false;
+  if (!r || r.deleted) return false;
   return r.reasons.length > 0 || r.strategies.length > 0 || r.mistakes.length > 0 || !!r.mood || r.ruleScore != null || !!r.feedback || !!r.todo
     || !!r.grade || r.margin != null || !!r.body || r.images.length > 0 || r.comments.length > 0;
 }
@@ -32,6 +32,7 @@ export function hasContent(r) {
  * @param {{execs?:{ordId:string|null}[]}} trade @param {{ordId:string, lever:number|null}[]} orders
  */
 export function leverageOf(trade, orders) {
+  if (trade.mock) return { value: trade.lever ?? null, source: '모의 입력', note: trade.lever == null ? '레버리지 미입력' : '' };
   const ids = new Set((trade.execs ?? []).map((e) => e.ordId).filter(Boolean));
   if (!ids.size) return { value: null, source: 'Order.lever', note: '체결에 주문 ID 없음' };
   const levs = [...new Set((orders ?? []).filter((o) => ids.has(o.ordId) && o.lever != null).map((o) => o.lever))];
@@ -63,3 +64,31 @@ export function mergeByTrade(byTrade, reviews) {
   }
   return out;
 }
+
+// --- 모의 매매: 실제로 체결하지 않은 가상 거래. 값은 모두 사용자 입력이고 계산으로 채우지 않는다 ---
+export const MOCK_PREFIX = 'mock:';
+export const isMockId = (id) => String(id).startsWith(MOCK_PREFIX);
+
+/** 새 모의 매매 복기. ts는 UTC ms. */
+export function newMock({ instId = '', side = 'long', ts = null } = {}) {
+  return { ...emptyReview(), mock: { instId, side, openTs: ts, closeTs: null, size: null, entryPx: null, exitPx: null, net: null, ccy: 'USDT', lever: null } };
+}
+
+/** 모의 매매 복기 → 라운드트립과 같은 모양(표·차트·복기 페이지 공용). 실거래 지표에는 넣지 않는다. */
+export function mockTrade(id, r) {
+  const m = r.mock ?? {};
+  const ccy = m.ccy || 'USDT', closed = m.closeTs != null, net = m.net ?? null;
+  return {
+    id, mock: true, instType: 'MOCK', instId: m.instId || '-', key: `${m.instId}|${m.side}`, side: m.side === 'short' ? 'short' : 'long',
+    openTs: m.openTs ?? null, closeTs: m.closeTs ?? null, maxSize: m.size ?? null, size: closed ? 0 : m.size ?? null,
+    status: closed ? 'CLOSED' : 'OPEN', closeReason: null, avgEntryPx: m.entryPx ?? null, avgExitPx: m.exitPx ?? null,
+    ccy, net, pnl: net, fee: null, interest: 0, funding: 0, amounts: net == null ? {} : { [ccy]: { pnl: net, fee: 0, interest: 0, funding: 0, net } },
+    execs: [], billIds: [], lever: m.lever ?? null, mgnMode: null,
+  };
+}
+
+/** 저장된 복기 중 모의 매매만 → 거래 목록(삭제된 것 제외, 매매일 순) */
+export const mockTrades = (reviews) => Object.entries(reviews ?? {})
+  .filter(([id, r]) => isMockId(id) && r?.mock && !r.deleted)
+  .map(([id, r]) => mockTrade(id, r))
+  .sort((a, b) => (a.openTs ?? 0) - (b.openTs ?? 0));
