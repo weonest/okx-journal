@@ -2,6 +2,7 @@
 import { linkJournal, journalStats } from '../core/notion.js';
 import { emptyRaw, concatRaw, analyze, ingestCsv, fromApi } from '../core/pipeline.js';
 import { mergeByTrade, emptyReview } from '../core/review.js';
+import { mergeRaw } from '../core/drive.js';
 
 export const S = {
   api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, journal: null, linked: null, selTrade: null, jstats: null, lastSync: null, error: null,
@@ -79,13 +80,23 @@ export async function addJournal(file) {
   S.journal = j; recompute();
 }
 
-export function setApi(out) { S.api = fromApi(out); S.lastSync = Date.now(); S.sample = false; save('lastSync', String(S.lastSync), true); recompute(); }
+// API는 최근 3개월만 주므로 교체하지 않고 기본키로 누적한다(오래된 기록이 사라지지 않게)
+export function setApi(out) { S.api = mergeRaw(S.sample ? null : S.api, fromApi(out)); S.lastSync = Date.now(); S.sample = false; save('lastSync', String(S.lastSync), true); recompute(); dataHook?.(); }
+let dataHook = null; // 클라우드 동기화가 등록한다(거래 데이터가 바뀌면 올리기 예약)
+export const setDataHook = (f) => { dataHook = f; };
+export const dataSnapshot = () => ({ api: S.api, csv: S.csv, csvInfo: S.csvInfo, lastSync: S.lastSync });
+/** 드라이브와 합친 거래 데이터 반영(예시 데이터 중에는 건드리지 않는다). */
+export function replaceData(d) {
+  if (S.sample) return;
+  S.api = d.api ?? null; S.csv = d.csv ?? emptyRaw(); S.csvInfo = d.csvInfo ?? []; S.lastSync = d.lastSync ?? S.lastSync;
+  recompute();
+}
 
 export async function addCsv(files) {
   const list = await Promise.all([...files].map(async (f) => ({ name: f.name, text: await f.text() })));
   const subtypes = S.api?.subtypes?.length ? S.api.subtypes : await loadSubtypes();
   const { raw, info } = ingestCsv(list, { subtypes });
-  S.csv = concatRaw(S.csv, raw); S.csvInfo.push(...info); S.sample = false; recompute();
+  S.csv = concatRaw(S.sample ? emptyRaw() : S.csv, raw); S.csvInfo = [...(S.sample ? [] : S.csvInfo), ...info]; S.sample = false; recompute(); dataHook?.();
 }
 
 async function loadSubtypes() {
