@@ -14,7 +14,7 @@ export function periodsView(rerender) {
   const seg = h('div', { class: 'seg' }, UNITS.map(([u, label]) => h('button', { class: u === unit ? 'on' : null, onclick: () => { unit = u; rerender(); } }, label)));
   if (!ui.ccy) return h('div', {}, bar, h('section', {}, '-: 청산된 거래 없음'));
   const pt = periodTable(r.trades, unit, ui.ccy, ui.filter);
-  const rows = [...pt.value].reverse().map((x) => [x.key, x.count, `${x.wins} / ${x.losses}`, fmtPct(x.winRate), td(fmtNum(x.pnl), cls(x.pnl)), td(fmtNum(x.fee), 'down'), td(fmtNum(x.other), cls(x.other)), td(fmtNum(x.net), cls(x.net)), td(fmtNum(x.cum), cls(x.cum))]);
+  const rows = [...pt.value].reverse().map((x) => [x.key, x.count, `${x.wins} / ${x.losses}`, fmtPct(x.winRate), td(fmtNum(x.pnl), cls(x.pnl)), td(fmtNum(x.fee), 'fee'), td(fmtNum(x.other), cls(x.other)), td(fmtNum(x.net), cls(x.net)), td(fmtNum(x.cum), cls(x.cum))]);
   return h('div', {}, bar,
     h('section', { title: `source: ${pt.source}\nnote: ${pt.note}` },
       h('div', { class: 'between' }, h('h2', { class: 'big' }, `주기별 손익 정산 (${ui.ccy})`), seg),

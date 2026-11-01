@@ -28,18 +28,21 @@ const COLS = {
   instType: { label: '상품군', icon: 'lines', cell: (t) => t.instType, val: (t) => t.instType },
   hold: { label: '보유 시간', icon: 'hash', cell: (t) => (t.closeTs != null ? fmtDur(t.closeTs - t.openTs) : '-'), val: (t) => (t.closeTs != null ? t.closeTs - t.openTs : null) },
   closeTs: { label: '청산일', icon: 'calendar', cell: (t) => fmtTs(t.closeTs), val: (t) => t.closeTs },
-  fee: { label: '수수료', icon: 'hash', cell: (t) => fmtNum(t.fee, 4), val: (t) => t.fee },
+  fee: { label: '수수료', icon: 'hash', cell: (t) => (t.fee == null ? (t.ccy ? '-' : '통화 여럿') : h('span', { class: 'fee' }, fmtNum(t.fee, 4) + ' ' + t.ccy)), val: (t) => t.fee },
   status: { label: '상태', icon: 'target', cell: (t) => t.status, val: (t) => t.status },
 };
-const DEFAULT_COLS = ['openTs', 'mock', 'instId', 'side', 'execs', 'maxSize', 'net', 'avgEntryPx', 'avgExitPx', 'strategies', 'reasons', 'mistakes', 'grade'];
+const DEFAULT_COLS = ['openTs', 'mock', 'instId', 'side', 'execs', 'maxSize', 'net', 'fee', 'avgEntryPx', 'avgExitPx', 'strategies', 'reasons', 'mistakes', 'grade'];
 let cols = (() => { try { const v = JSON.parse(localStorage.getItem('okx.cols')); return Array.isArray(v) && v.every((x) => COLS[x]) && v.length ? v : DEFAULT_COLS; } catch { return DEFAULT_COLS; } })();
 // 체결 열이 생기기 전에 저장된 열 설정에는 한 번만 끼워 넣는다
 try {
   const v = localStorage.getItem('okx.cols.v');
-  if (v !== '3') {
+  if (v !== '3' && v !== '4') {
     if (v !== '2' && !cols.includes('execs')) cols = [...cols.slice(0, 3), 'execs', ...cols.slice(3)];
     if (!cols.includes('mock')) cols = [...cols.slice(0, 1), 'mock', ...cols.slice(1)]; // 모의 열
-    localStorage.setItem('okx.cols.v', '3'); localStorage.setItem('okx.cols', JSON.stringify(cols));
+  }
+  if (v !== '4') {
+    if (!cols.includes('fee')) { const i = cols.indexOf('net'); cols = i < 0 ? [...cols, 'fee'] : [...cols.slice(0, i + 1), 'fee', ...cols.slice(i + 1)]; } // 수수료 열
+    localStorage.setItem('okx.cols.v', '4'); localStorage.setItem('okx.cols', JSON.stringify(cols));
   }
 } catch { /* 저장 불가 환경 */ }
 const saveCols = () => { try { localStorage.setItem('okx.cols', JSON.stringify(cols)); } catch { /* 저장 불가 환경 */ } };
