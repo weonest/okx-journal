@@ -23,6 +23,7 @@ test('분할 매수→일부 매도→전량 매도: 평균단가법, 수수료�
   close(t.pnl, 10); close(t.fee, -4); close(t.net, 6);
   close(r.sells[0].pnl, 20); close(r.sells[0].fee, -2);
   assert.equal(r.unknown.length, 0);
+  assert.deepEqual(t.execs.map((e) => [e.side, e.kind, e.sz, e.px]), [['buy', 'in', 1, 100], ['buy', 'in', 1, 120], ['sell', 'out', 1, 130], ['sell', 'out', 1, 100]]);
 });
 
 test('기초코인 수수료: 수량 차감, 평균단가 상승', () => {

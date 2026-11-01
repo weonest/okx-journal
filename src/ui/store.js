@@ -1,9 +1,11 @@
 // 화면 상태. 키는 기본 sessionStorage, "이 기기에 기억"을 켠 때만 localStorage.
 import { linkJournal, journalStats } from '../core/notion.js';
 import { emptyRaw, concatRaw, analyze, ingestCsv, fromApi } from '../core/pipeline.js';
+import { mergeByTrade, emptyReview } from '../core/review.js';
 
 export const S = {
   api: null, csv: emptyRaw(), csvInfo: [], sample: false, result: null, journal: null, linked: null, selTrade: null, jstats: null, lastSync: null, error: null,
+  reviews: {}, demoReviews: {}, byTrade: new Map(), // 앱 안 복기(거래 id → 복기). 예시 데이터일 때는 demoReviews(저장 안 함)
   usdRate: null, // 환산 기준 주입 자리(8단계에서는 없음 → USD 합계 '-')
 };
 const subs = new Set();
@@ -20,9 +22,56 @@ export function recompute() {
 }
 
 function relink() {
-  if (!S.journal || !S.result) { S.linked = null; S.jstats = null; return; }
-  S.linked = linkJournal(S.journal.entries, S.result.trades);
-  S.jstats = journalStats(S.linked.byTrade, S.result.trades);
+  S.linked = S.journal && S.result ? linkJournal(S.journal.entries, S.result.trades) : null;
+  S.byTrade = mergeByTrade(S.linked?.byTrade, reviews());
+  S.jstats = S.result && S.byTrade.size ? journalStats(S.byTrade, S.result.trades) : null;
+}
+
+// --- 거래별 복기: 사용자가 쓴 내용이므로 "이 기기에 기억"과 상관없이 IndexedDB에 저장한다 ---
+export const reviews = () => (S.sample ? S.demoReviews : S.reviews);
+export const reviewOf = (id) => ({ ...emptyReview(), ...(reviews()[id] ?? {}) });
+let reviewHook = null; // 클라우드 동기화가 등록한다(저장 직후 올리기 예약)
+export const setReviewHook = (f) => { reviewHook = f; };
+export function saveReview(id, r) {
+  reviews()[id] = { ...r, updatedAt: Date.now() };
+  if (!S.sample) { tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {}); reviewHook?.(); }
+  relink(); subs.forEach((f) => f());
+}
+/** 클라우드 병합 결과로 교체(예시 데이터 중에는 화면을 건드리지 않는다). */
+export function replaceReviews(m) {
+  S.reviews = m;
+  tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {});
+  if (!S.sample) { relink(); subs.forEach((f) => f()); }
+}
+// 이미지 원본 캐시(복기에는 id만 둔다)
+export const kvGet = (k) => tx('readonly', (st) => st.get(k)).catch(() => null);
+export const kvPut = (k, v) => tx('readwrite', (st) => st.put(v, k)).catch(() => {});
+export const kvDel = (k) => tx('readwrite', (st) => st.delete(k)).catch(() => {});
+export function exportReviews() {
+  const blob = new Blob([JSON.stringify({ kind: 'okx-journal-reviews', exportedAt: Date.now(), reviews: S.reviews })], { type: 'application/json' });
+  const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = `okx-journal-reviews-${new Date().toISOString().slice(0, 10)}.json`; a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+}
+/** 백업 불러오기: 같은 거래는 더 최근에 수정한 쪽을 남긴다. 합친 건수를 돌려준다. */
+export async function importReviews(file) {
+  const j = JSON.parse(await file.text());
+  if (j?.kind !== 'okx-journal-reviews' || typeof j.reviews !== 'object') throw new Error('복기 백업 파일이 아닙니다');
+  let n = 0;
+  for (const [id, r] of Object.entries(j.reviews)) if (!S.reviews[id] || (r.updatedAt ?? 0) > (S.reviews[id].updatedAt ?? 0)) { S.reviews[id] = r; n++; }
+  await tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {});
+  relink(); subs.forEach((f) => f());
+  return n;
+}
+async function loadReviews() {
+  try { S.reviews = (await tx('readonly', (st) => st.get('reviews'))) ?? {}; } catch { S.reviews = {}; }
+  // 이전 형식(복기 안에 이미지 src)을 캐시로 옮긴다
+  let moved = false;
+  for (const r of Object.values(S.reviews)) for (const im of r.images ?? []) {
+    if (!im.src) continue;
+    im.id ??= crypto.randomUUID(); im.fileId ??= null;
+    await kvPut('img:' + im.id, im.src); delete im.src; moved = true;
+  }
+  if (moved) await tx('readwrite', (st) => st.put(S.reviews, 'reviews')).catch(() => {});
 }
 export async function addJournal(file) {
   const j = JSON.parse(await file.text());
@@ -95,7 +144,8 @@ function persist() {
 }
 /** 시작할 때 한 번: 저장된 데이터가 있으면 복원한다. */
 export async function restore() {
-  if (!isRemembering()) return;
+  await loadReviews();
+  if (!isRemembering()) { relink(); subs.forEach((f) => f()); return; }
   try {
     const d = await tx('readonly', (st) => st.get('data'));
     if (!d) return;

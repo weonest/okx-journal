@@ -9,6 +9,7 @@ import { ordersView } from './orders.js';
 import { journalView } from './journal.js';
 import { marketPanel } from './market.js';
 import { positionsView } from './positions.js';
+import { startCloud } from './cloud.js'; // 로그인 응답(#access_token)을 첫 렌더 전에 처리
 
 const ROUTES = {
   dashboard: ['종합 대시보드', dashboardView], trades: ['세션 상세 목록', tradesView], calendar: ['트레이딩 캘린더', calendarView], periods: ['주기별 손익 정산', periodsView],
@@ -55,4 +56,4 @@ document.getElementById('actions').replaceChildren(pick,
 
 subscribe(render);
 render();
-restore(); // 저장된 데이터가 있으면 복원(복원되면 subscribe로 다시 그려진다)
+restore().finally(startCloud); // 저장된 데이터·복기 복원 뒤 클라우드 동기화 시작

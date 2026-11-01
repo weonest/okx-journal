@@ -64,13 +64,13 @@ export function buildSpot(fills, opts = {}) {
         s.trade = {
           id: `${f.instId}#${f.tradeId}`, instType: 'SPOT', instId: f.instId, key: `${f.instId}|long`, side: 'long',
           openTs: f.ts, closeTs: null, maxSize: 0, size: 0, status: 'OPEN', closeReason: null,
-          amounts: {}, billIds: [], fillIds: [], quote, mgnMode: null, feeInBase: 0,
+          amounts: {}, billIds: [], fillIds: [], execs: [], quote, mgnMode: null, feeInBase: 0,
         };
         trades.push(s.trade);
       }
       const net = sz - baseFeeQty;
       s.qty += net; s.cost += px * sz; s.buyFee += quoteFee;
-      s.trade.fillIds.push(f.tradeId); s.trade.feeInBase += baseFeeQty;
+      s.trade.execs.push({ ts: f.ts, tradeId: f.tradeId, ordId: f.ordId || null, side: f.side, kind: 'in', sz, px, pnl: 0, fee, ccy: feeCcy }); s.trade.fillIds.push(f.tradeId); s.trade.feeInBase += baseFeeQty;
       s.trade.size = s.qty; s.trade.maxSize = Math.max(s.trade.maxSize, s.qty);
     } else {
       addExp(f, base, quote, -sz, px * sz, feeCcy, fee);
@@ -80,7 +80,7 @@ export function buildSpot(fills, opts = {}) {
         const reason = s.qty <= EPS ? '취득가 미상(데이터 기간 내 매수 없음)' : '취득가 미상(보유 수량 초과분 포함)';
         unknown.push({ tradeId: f.tradeId, instId: f.instId, ts: f.ts, sz, held: s.qty, reason });
         sells.push({ tradeId: f.tradeId, instId: f.instId, ts: f.ts, sz, px, pnl: null, fee: -sellFee, reason });
-        if (s.trade) { s.trade.fillIds.push(f.tradeId); closeTrade(s, f, 'UNKNOWN_BASIS'); }
+        if (s.trade) { s.trade.execs.push({ ts: f.ts, tradeId: f.tradeId, ordId: f.ordId || null, side: f.side, kind: 'out', sz, px, pnl: null, fee, ccy: feeCcy }); s.trade.fillIds.push(f.tradeId); closeTrade(s, f, 'UNKNOWN_BASIS'); }
         s.qty = 0; s.cost = 0; s.buyFee = 0;
         continue;
       }
@@ -91,7 +91,7 @@ export function buildSpot(fills, opts = {}) {
       sells.push({ tradeId: f.tradeId, instId: f.instId, ts: f.ts, sz, px, avgPx: avg, pnl: gross, fee: feeTotal, net: gross + feeTotal, ccy: quote });
       const a = (s.trade.amounts[quote] ??= emptyAmt());
       a.pnl += gross; a.fee += feeTotal;
-      s.trade.fillIds.push(f.tradeId);
+      s.trade.execs.push({ ts: f.ts, tradeId: f.tradeId, ordId: f.ordId || null, side: f.side, kind: 'out', sz, px, pnl: gross, fee, ccy: feeCcy }); s.trade.fillIds.push(f.tradeId);
       s.cost -= avg * sz; s.buyFee -= allocFee; s.qty -= sz;
       s.trade.size = s.qty;
       if (s.qty < dustOf(f.instId)) closeTrade(s, f, 'TRADE');

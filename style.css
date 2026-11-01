@@ -273,3 +273,42 @@ button,.tcard,table.notion tbody tr,.seg button{-webkit-tap-highlight-color:tran
   footer.foot{flex-direction:column;gap:4px}
 }
 button.pill.ghost.active{background:var(--acc);color:#04150d;border-color:var(--acc)}
+/* 거래별 복기 페이지(노션식 오버레이) */
+.open-btn{background:#1f6f4a;color:#fff;border:0;border-radius:6px;padding:2px 8px;font-size:12px;cursor:pointer}
+button.acc{color:var(--acc);border-color:#1f6f4a}
+.rv-ov{position:fixed;inset:0;background:rgba(0,0,0,.55);z-index:50;display:flex;justify-content:flex-end}
+.rv-page{width:min(880px,100%);height:100%;overflow-y:auto;background:var(--bg);border-left:1px solid var(--line);padding:16px 36px 48px;box-sizing:border-box}
+.rv-top{position:sticky;top:-16px;background:var(--bg);padding:8px 0;z-index:1}
+.rv-title{font-size:30px;margin:4px 0 16px}
+.rv-props{display:grid;gap:2px}
+.rv-p{display:grid;grid-template-columns:180px 1fr;align-items:center;gap:8px;min-height:34px}
+.rv-k{display:flex;align-items:center;gap:8px;color:var(--mute);font-size:13px}
+.rv-v{min-width:0;overflow-wrap:anywhere}
+.rv-in{width:calc(100% + 7px);margin-left:-7px;box-sizing:border-box;background:transparent;border:1px solid transparent;padding:5px 6px}
+.rv-in:hover{background:var(--panel)}.rv-in:focus{background:var(--panel);border-color:var(--line);outline:0}
+.rv-roe{display:inline-flex;align-items:center;gap:10px;font-family:var(--mono);font-weight:600}
+.rv-roe i{display:inline-block;height:3px;max-width:140px;background:currentColor;border-radius:2px}
+.rv-more{background:none;border:0;color:var(--mute);font-size:12px;padding:6px 0;cursor:pointer}
+.rv-h{margin:22px 0 6px;font-size:15px}
+.rv-c{display:flex;align-items:center;gap:10px;padding:4px 0}
+.rv-av{flex:none;width:26px;height:26px;border-radius:50%;background:var(--panel2);display:grid;place-items:center;font-size:12px}
+.rv-drop{display:flex;flex-wrap:wrap;align-items:center;gap:12px;border:1px dashed var(--line);border-radius:8px;padding:12px;margin-top:18px}
+.rv-drop.on{border-color:var(--acc)}
+.rv-gal{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:8px;margin-top:8px}
+.rv-gal figure{position:relative;margin:0}
+.rv-gal img{width:100%;height:110px;object-fit:cover;border-radius:6px;cursor:zoom-in;display:block}
+.rv-gal .ib{position:absolute;top:4px;right:4px;background:rgba(0,0,0,.6)}
+.rv-body{width:100%;box-sizing:border-box;min-height:160px;resize:none;background:transparent;color:var(--fg);border:1px solid transparent;border-radius:6px;padding:8px;font:inherit;line-height:1.6;overflow:hidden}
+.rv-body:focus{border-color:var(--line);outline:0}
+.rv-foot{margin-top:20px}
+.rv-page .jcard{margin-top:20px}
+@media (max-width:600px){
+  .rv-page{padding:12px 16px 40px;border-left:0}
+  .rv-p{grid-template-columns:120px 1fr}
+  .rv-title{font-size:24px}
+}
+table.notion .c0{width:56px;min-width:56px}
+.cloud-st{display:inline-flex;align-items:center;gap:8px;font-size:12px;color:var(--mute)}
+.cloud-st.ok{color:var(--up)}.cloud-st.expired,.cloud-st.error{color:var(--warn)}
+.rv-gal figure.loading{min-height:110px;background:var(--panel);border-radius:6px}
+section code{overflow-wrap:anywhere;word-break:break-all}

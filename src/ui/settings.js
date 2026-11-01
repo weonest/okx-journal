@@ -3,6 +3,7 @@ import { S, setApi, addCsv, clearData, setRemember, isRemembering, loadKeys, sav
 import { createClient } from '../core/okx/client.js';
 import { syncAll } from '../core/okx/sync.js';
 import { applyArchive, getArchive } from '../core/okx/archive.js';
+import { cloudSection } from './cloud.js';
 
 export function settingsView() {
   const saved = loadKeys() ?? {};
@@ -61,6 +62,7 @@ export function settingsView() {
   drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('over'); addCsv(e.dataTransfer.files); };
 
   return h('div', {},
+    cloudSection(),
     h('section', {}, h('h2', {}, 'API 키 (Read 전용)'),
       inp('k', 'API Key', saved.key, 'password'), inp('s', 'Secret', saved.secret, 'password'), inp('p', 'Passphrase', saved.passphrase, 'password'),
       h('div', { class: 'row' }, remember, h('label', { for: 'rem', style: 'margin:0' }, '이 기기에 기억 (키와 불러온 데이터를 이 브라우저에 저장 · 끄면 이 탭에서만 유지)'),

@@ -1,5 +1,5 @@
 import { h, table, td, fmtNum, fmtPct, fmtTs, cls } from './dom.js';
-import { S, addJournal } from './store.js';
+import { S, addJournal, exportReviews, importReviews } from './store.js';
 
 const netText = (net) => Object.entries(net).map(([c, v]) => `${fmtNum(v)} ${c}`).join(' / ') || '-';
 
@@ -18,8 +18,16 @@ export function journalView() {
   const up = h('section', {}, h('h2', {}, '노션 일지 불러오기'),
     h('div', { class: 'mute' }, '노션 API는 브라우저에서 막혀 있어 `node --env-file=.env.local scripts/notion-export.js`로 만든 data/notion-journal.json을 올립니다.'),
     h('div', { class: 'row' }, pick), err);
-  if (!S.journal) return h('div', {}, up, h('section', {}, h('div', { class: 'mute' }, '-: 일지가 없습니다. 우측 상단 "예시 데이터"를 누르면 합성 일지가 함께 보입니다.')));
-  if (!S.linked) return h('div', {}, up, h('section', {}, '거래 데이터가 없어 연결하지 못했습니다. 먼저 거래 데이터를 불러오세요.'));
+  const rmsg = h('span', { class: 'mute' });
+  const rpick = h('input', { type: 'file', accept: '.json,application/json', hidden: true });
+  rpick.onchange = async () => { try { rmsg.textContent = `불러옴: ${await importReviews(rpick.files[0])}건 반영`; } catch (e) { rmsg.textContent = '오류: ' + e.message; } rpick.value = ''; };
+  const nRev = Object.keys(S.reviews).length;
+  const backup = h('section', {}, h('h2', {}, '앱 복기 백업'),
+    h('div', { class: 'mute' }, '세션 상세 목록에서 "열기"로 쓴 복기는 이 브라우저에만 저장됩니다. 다른 기기로 옮기거나 보관하려면 내보내세요.'),
+    h('div', { class: 'row' }, h('button', { class: 'sub', disabled: nRev ? null : true, onclick: exportReviews }, `내보내기(${nRev}건)`), h('button', { class: 'sub', onclick: () => rpick.click() }, '불러오기'), rpick, rmsg));
+  const stats = S.jstats ? h('section', {}, h('div', { class: 'mute small' }, '노션 일지와 앱 복기를 합친 집계입니다.'), statTable(S.jstats.strategies, '전략별'), statTable(S.jstats.reasons, '진입 근거별'), statTable(S.jstats.mistakes, '실수별'), statTable(S.jstats.grade, '등급별')) : null;
+  if (!S.journal) return h('div', {}, stats, backup, up, h('section', {}, h('div', { class: 'mute' }, '-: 노션 일지가 없습니다. 노션 없이도 세션 상세 목록의 "열기"로 복기를 쓸 수 있습니다.')));
+  if (!S.linked) return h('div', {}, backup, up, h('section', {}, '거래 데이터가 없어 연결하지 못했습니다. 먼저 거래 데이터를 불러오세요.'));
 
   const L = S.linked, tradeById = new Map(S.result.trades.map((t) => [t.id, t]));
   const link = new Map(L.links.map((l) => [l.pageId, l]));
@@ -33,15 +41,16 @@ export function journalView() {
     up,
     h('section', {}, h('div', {}, `일지 ${S.journal.entries.length}건 · 연결 ${L.links.length} · 미연결 ${L.unlinked.length}`,
       S.journal.exportedAt ? h('span', { class: 'mute' }, ` · 내보낸 시각 ${fmtTs(S.journal.exportedAt)} (KST)`) : null)),
-    h('section', {}, statTable(S.jstats.strategies, '전략별'), statTable(S.jstats.reasons, '진입 근거별'), statTable(S.jstats.mistakes, '실수별'), statTable(S.jstats.grade, '등급별')),
-    h('section', {}, h('h2', {}, '일지 목록'), table(['날짜(KST)', '종목', '방향', '전략', '실수', '등급', '연결된 거래', '연결 근거/사유'], rows)));
+    stats,
+    h('section', {}, h('h2', {}, '일지 목록'), table(['날짜(KST)', '종목', '방향', '전략', '실수', '등급', '연결된 거래', '연결 근거/사유'], rows)),
+    backup);
 }
 
 /** 노션 본문 줄(내보내기 형식) → 읽기 좋은 블록. # 제목, - 목록, [ ]/[x] 체크, 나머지는 문단. */
-function renderBody(lines) {
+export function renderBody(lines) {
   const out = []; let ul = null;
   for (const l of lines) {
-    const li = /^- (.*)/.exec(l), todo = /^\[( |x)\] (.*)/.exec(l), hd = /^# (.*)/.exec(l);
+    const todo = /^(?:- )?\[( |x)\] (.*)/.exec(l), li = !todo && /^[-*] (.*)/.exec(l), hd = /^#{1,3} (.*)/.exec(l);
     if (li || todo) {
       if (!ul) { ul = h('ul', { class: 'jl' }); out.push(ul); }
       ul.append(h('li', {}, todo ? h('span', { class: 'chk' + (todo[1] === 'x' ? ' done' : '') }, todo[1] === 'x' ? '✓' : '') : null, todo ? todo[2] : li[1]));
