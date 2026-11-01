@@ -13,6 +13,7 @@
 - 기본 Sonnet, 막힐 때만 Opus. 단순 작업은 /effort low. /fast는 필요할 때만.
 - 파일은 경로·함수명까지 지정해서 요청. 안 쓰는 MCP는 /mcp에서 끄기.
 - /context, /usage로 가끔 점검. 세션 중 이 파일을 고치면 /clear 전까지 반영 안 됨. -->
+@.claude/PERSONA.md
 
 # 작업 지침
 
