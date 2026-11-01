@@ -14,8 +14,22 @@ const px = (v) => (v == null ? '-' : fmtNum(v, Math.abs(v) < 10 ? 4 : 2));
 const prop = (ic, label, value, title) => h('div', { class: 'rv-p', title: title || null }, h('span', { class: 'rv-k' }, icon(ic, 15), label), h('div', { class: 'rv-v' }, value));
 const tip = (m) => `source: ${m.source}${m.note ? '\nnote: ' + m.note : ''}`;
 
-export function closeReview() { overlay?.remove(); overlay = null; removeEventListener('keydown', onKey); }
-const onKey = (e) => { if (e.key === 'Escape' && !e.target.closest?.('textarea, input')) closeReview(); };
+export function closeReview() { closeLightbox(); overlay?.remove(); overlay = null; removeEventListener('keydown', onKey); }
+const onKey = (e) => {
+  if (e.key !== 'Escape' || e.target.closest?.('textarea, input')) return;
+  if (lightbox) closeLightbox(); else closeReview(); // 이미지 뷰어가 열려 있으면 그것부터 닫는다
+};
+
+// 이미지 크게 보기: data: 주소는 브라우저가 새 탭 열기를 막으므로 앱 안에서 띄운다
+let lightbox = null;
+function closeLightbox() { lightbox?.remove(); lightbox = null; }
+function viewImage(src, name) {
+  closeLightbox();
+  lightbox = h('div', { class: 'lb', role: 'dialog', 'aria-label': '이미지 보기', onclick: (e) => { if (!e.target.closest('a')) closeLightbox(); } },
+    h('img', { src, alt: name ?? '' }),
+    h('div', { class: 'lb-bar' }, h('span', { class: 'mute small' }, name ?? ''), h('a', { href: src, download: name || 'image.jpg', class: 'sub small' }, '저장'), h('button', { class: 'ib', title: '닫기(Esc)' }, '×')));
+  document.body.append(lightbox);
+}
 
 export function openReview(tradeId) {
   const t = [...(S.result?.trades ?? []), ...S.mocks].find((x) => x.id === tradeId);
@@ -132,7 +146,7 @@ export function openReview(tradeId) {
   const drawImgs = () => gal.replaceChildren(...r.images.map((im) => {
     const img = h('img', { alt: im.name ?? '' }), fig = h('figure', { class: 'loading' }, img,
       h('button', { class: 'ib', title: '삭제', onclick: () => { forgetImage(im); save({ images: r.images.filter((x) => x !== im) }); drawImgs(); } }, '×'));
-    imageSrc(im).then((src) => { fig.classList.remove('loading'); if (src) { img.src = src; img.onclick = () => window.open(src, '_blank'); } else fig.append(h('span', { class: 'mute small' }, '이 기기에 없음(Drive 연결 후 표시)')); });
+    imageSrc(im).then((src) => { fig.classList.remove('loading'); if (src) { img.src = src; img.onclick = () => viewImage(src, im.name); } else fig.append(h('span', { class: 'mute small' }, '이 기기에 없음(Drive 연결 후 표시)')); });
     return fig;
   }));
   drawImgs();
