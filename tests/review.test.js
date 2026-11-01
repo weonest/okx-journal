@@ -1,6 +1,6 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
-import { emptyReview, parseTags, hasContent, leverageOf, roeOf, mergeByTrade } from '../src/core/review.js';
+import { emptyReview, parseTags, hasContent, leverageOf, roeOf, mergeByTrade, newMock, mockTrade, mockTrades, isMockId } from '../src/core/review.js';
 
 test('parseTags: 쉼표로 나누고 공백·중복 제거', () => {
   assert.deepEqual(parseTags(' 돌파, 지지 반등,돌파 ,, '), ['돌파', '지지 반등']);
@@ -38,4 +38,27 @@ test('mergeByTrade: 노션 항목 뒤에 내용 있는 복기만 붙이고 원�
   assert.equal(out.has('b'), false);
   assert.equal(out.get('c')[0].grade, 'B');
   assert.equal(src.get('a').length, 1);
+});
+
+test('모의 매매: 입력값 그대로 거래 모양으로, 미입력은 null(계산으로 채우지 않음)', () => {
+  const r = newMock({ instId: 'BTC-USDT-SWAP', side: 'short', ts: 1000 });
+  let t = mockTrade('mock:a', r);
+  assert.equal(t.mock, true); assert.equal(t.side, 'short'); assert.equal(t.status, 'OPEN');
+  assert.equal(t.net, null); assert.deepEqual(t.amounts, {});
+  assert.equal(roeOf(t, { margin: 100 }).value, null); // 미청산
+  r.mock = { ...r.mock, closeTs: 2000, size: 1, entryPx: 100, exitPx: 90, net: 9.5, lever: 5 };
+  t = mockTrade('mock:a', { ...r, margin: 50 });
+  assert.equal(t.status, 'CLOSED'); assert.equal(t.net, 9.5); assert.equal(t.ccy, 'USDT');
+  assert.equal(roeOf(t, { margin: 50 }).value, 0.19);
+  assert.equal(leverageOf(t, []).value, 5);
+});
+
+test('mockTrades: mock: 키만, 삭제 표시는 제외, 매매일 순. 삭제된 복기는 내용 없음', () => {
+  const list = mockTrades({
+    'mock:b': newMock({ ts: 20 }), 'mock:a': newMock({ ts: 10 }),
+    'mock:x': { ...newMock({ ts: 5 }), deleted: true }, 'BTC|long#1': { ...emptyReview(), mood: 'x' },
+  });
+  assert.deepEqual(list.map((t) => t.id), ['mock:a', 'mock:b']);
+  assert.equal(isMockId('mock:a'), true); assert.equal(isMockId('BTC|long#1'), false);
+  assert.equal(hasContent({ ...emptyReview(), mood: 'x', deleted: true }), false);
 });

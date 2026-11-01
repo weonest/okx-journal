@@ -1,8 +1,8 @@
 // 거래별 복기 페이지(노션식). 거래 값은 읽기 전용, 복기 칸은 편집 후 바로 저장한다.
 // 오버레이는 앱 렌더와 별개 DOM이라 저장 후 화면이 다시 그려져도 입력 포커스가 유지된다.
-import { h, icon, fmtNum, fmtTs, fmtDur, fmtPct, cls } from './dom.js';
-import { S, reviewOf, saveReview } from './store.js';
-import { REVIEW_FIELDS, parseTags, leverageOf, roeOf } from '../core/review.js';
+import { h, icon, fmtNum, fmtTs, fmtDur, fmtPct, cls, KST } from './dom.js';
+import { S, reviewOf, saveReview, deleteReview } from './store.js';
+import { REVIEW_FIELDS, parseTags, leverageOf, roeOf, mockTrade } from '../core/review.js';
 import { renderBody, journalForTrade } from './journal.js';
 import { imageSrc, forgetImage, cloudBadge } from './cloud.js';
 import { kvPut } from './store.js';
@@ -18,18 +18,19 @@ export function closeReview() { overlay?.remove(); overlay = null; removeEventLi
 const onKey = (e) => { if (e.key === 'Escape' && !e.target.closest?.('textarea, input')) closeReview(); };
 
 export function openReview(tradeId) {
-  const t = S.result?.trades.find((x) => x.id === tradeId);
+  const t = [...(S.result?.trades ?? []), ...S.mocks].find((x) => x.id === tradeId);
   if (!t) return;
   closeReview();
   let r = reviewOf(tradeId);
   const save = (patch) => { r = { ...r, ...patch }; saveReview(tradeId, r); };
 
-  const lev = leverageOf(t, S.result.data?.Order);
+  const cur = () => (t.mock ? mockTrade(tradeId, r) : t); // 모의 매매는 입력할 때마다 값이 바뀐다
+  const lev = leverageOf(t, S.result?.data?.Order);
   const roeBox = h('div', { class: 'rv-v' });
   const drawRoe = () => {
-    const m = roeOf(t, r);
+    const m = roeOf(cur(), r);
     roeBox.replaceChildren(m.value == null ? h('span', { class: 'mute', title: tip(m) }, '- ' + m.note)
-      : h('span', { class: 'rv-roe ' + cls(m.value), title: tip(m) }, (m.value > 0 ? '+' : '') + fmtPct(m.value), h('i', { style: `width:${Math.min(100, Math.abs(m.value) * 100)}%` })));
+      : h('span', { class: 'rv-roe ' + cls(m.value), title: tip(m) }, (m.value > 0 ? '+' : '') + fmtPct(m.value), h('i', { style: `width:${Math.round(Math.min(1, Math.abs(m.value)) * 140)}px` })));
   };
   drawRoe();
 
@@ -57,7 +58,38 @@ export function openReview(tradeId) {
   const editProps = REVIEW_FIELDS.map((f) => prop(icons[f.key], labelOf(f), field(f)));
 
   // 읽기 전용 거래 값
-  const main = [
+  // 모의 매매: 거래 값도 직접 입력(계산으로 채우지 않는다). 시각 입력은 KST.
+  const title = h('h1', { class: 'rv-title' }, t.instId.replace('-SWAP', ''));
+  const toLocal = (ts) => (ts == null ? '' : new Date(ts + KST).toISOString().slice(0, 16));
+  const mk = (key, type = 'number') => {
+    const v = r.mock[key];
+    const el = h('input', { class: 'rv-in', type: type === 'dt' ? 'datetime-local' : type, value: type === 'dt' ? toLocal(v) : v ?? '', placeholder: '비어 있음', step: 'any', inputmode: type === 'number' ? 'decimal' : null });
+    el.onchange = () => {
+      const x = el.value.trim();
+      const val = type === 'dt' ? (x ? Date.parse(x + ':00+09:00') : null) : type === 'number' ? (x === '' || !Number.isFinite(Number(x)) ? null : Number(x)) : key === 'instId' ? x.toUpperCase() : x;
+      save({ mock: { ...r.mock, [key]: val } });
+      if (key === 'instId') el.value = val; // 대문자로 맞춘 값을 그대로 보여 준다
+      title.textContent = (r.mock.instId || '-').replace('-SWAP', ''); drawRoe();
+    };
+    el.onkeydown = (e) => { if (e.key === 'Enter') el.blur(); };
+    return el;
+  };
+  const mockSide = () => h('select', { class: 'rv-in', onchange: (e) => save({ mock: { ...r.mock, side: e.target.value } }) },
+    [['long', 'LONG'], ['short', 'SHORT']].map(([v, l]) => h('option', { value: v, selected: r.mock.side === v ? true : null }, l)));
+  const main = t.mock ? [
+    prop('flask', '구분', h('span', { class: 'chip mock' }, '모의 매매'), '실제로 체결하지 않은 가상 거래입니다. 대시보드·통계에는 넣지 않습니다.'),
+    prop('lines', '종목', mk('instId', 'text')),
+    prop('target', 'SIDE', mockSide()),
+    prop('calendar', '매매일 (KST)', mk('openTs', 'dt')),
+    prop('calendar', '청산일 (KST)', mk('closeTs', 'dt')),
+    prop('hash', '최대 수량', mk('size')),
+    prop('hash', '평균 진입가', mk('entryPx')),
+    prop('hash', '평균 청산가', mk('exitPx')),
+    prop('arrow', '순 손익', mk('net')),
+    prop('hash', '통화', mk('ccy', 'text')),
+    h('div', { class: 'rv-p' }, h('span', { class: 'rv-k' }, icon('percent', 15), 'ROE'), roeBox),
+    prop('hash', '사용 레버리지', mk('lever')),
+  ] : [
     prop('calendar', '매매일', fmtTs(t.openTs) + ' (KST)'),
     prop('target', 'SIDE', h('span', { class: 'tag ' + t.side }, t.side.toUpperCase())),
     prop('hash', '최대 수량', fmtNum(t.maxSize, 6)),
@@ -67,7 +99,7 @@ export function openReview(tradeId) {
     h('div', { class: 'rv-p' }, h('span', { class: 'rv-k' }, icon('percent', 15), 'ROE'), roeBox),
     prop('hash', '사용 레버리지', lev.value == null ? h('span', { class: 'mute' }, '- ' + lev.note) : `${lev.value}배`, tip(lev)),
   ];
-  const more = [
+  const more = t.mock ? [] : [
     prop('calendar', '청산일', t.closeTs != null ? fmtTs(t.closeTs) + ' (KST)' : '- 미청산'),
     prop('hash', '보유 시간', t.closeTs != null ? fmtDur(t.closeTs - t.openTs) : '-'),
     prop('hash', '수수료', t.ccy ? fmtNum(t.fee, 4) + ' ' + t.ccy : '-'),
@@ -77,7 +109,7 @@ export function openReview(tradeId) {
     prop('target', '상태', t.status + (t.closeReason && t.closeReason !== 'TRADE' ? ' · ' + t.closeReason : '')),
   ];
   const moreBox = h('div', { hidden: true }, more);
-  const moreBtn = h('button', { class: 'rv-more', onclick: () => { moreBox.hidden = !moreBox.hidden; moreBtn.textContent = moreBox.hidden ? '⌄ 속성 더 보기' : '⌃ 속성 접기'; } }, '⌄ 속성 더 보기');
+  const moreBtn = t.mock ? null : h('button', { class: 'rv-more', onclick: () => { moreBox.hidden = !moreBox.hidden; moreBtn.textContent = moreBox.hidden ? '⌄ 속성 더 보기' : '⌃ 속성 접기'; } }, '⌄ 속성 더 보기');
 
   // 체결 내역
   const ex = t.execs ?? [];
@@ -135,10 +167,12 @@ export function openReview(tradeId) {
   const pvBtn = h('button', { class: 'sub small', onclick: () => { const on = pv.hidden; pv.hidden = !on; ta.hidden = on; if (on) pv.replaceChildren(...renderBody(ta.value.split('\n').filter((l) => l.trim()))); else fit(); pvBtn.textContent = on ? '편집' : '미리보기'; } }, '미리보기');
 
   const page = h('div', { class: 'rv-page', role: 'dialog', 'aria-modal': 'true' },
-    h('div', { class: 'between rv-top' }, h('span', { class: 'mute small' }, '세션 상세 목록 / ' + t.instId), h('button', { class: 'ib', title: '닫기(Esc)', onclick: closeReview }, '×')),
-    h('h1', { class: 'rv-title' }, t.instId.replace('-SWAP', '')),
+    h('div', { class: 'between rv-top' }, h('span', { class: 'mute small' }, '세션 상세 목록 / ' + (t.mock ? '모의 매매' : t.instId)),
+      h('div', { class: 'row' }, t.mock ? h('button', { class: 'sub small down', onclick: () => { if (confirm('이 모의 매매와 복기를 삭제할까요? (다른 기기에서도 삭제됩니다)')) { deleteReview(tradeId); closeReview(); } } }, '삭제') : null,
+        h('button', { class: 'ib', title: '닫기(Esc)', onclick: closeReview }, '×'))),
+    title,
     h('div', { class: 'rv-props' }, main, editProps, moreBox), moreBtn,
-    h('h3', { class: 'rv-h' }, `체결 ${ex.length}건`), h('div', { class: 'mute small' }, '포지션이 0에서 열려 0으로 닫힐 때까지를 거래 1건으로 묶고, 그 안의 분할 진입·청산을 체결로 보여줍니다.'), execTbl,
+    t.mock ? null : [h('h3', { class: 'rv-h' }, `체결 ${ex.length}건`), h('div', { class: 'mute small' }, '포지션이 0에서 열려 0으로 닫힐 때까지를 거래 1건으로 묶고, 그 안의 분할 진입·청산을 체결로 보여줍니다.'), execTbl],
     h('h3', { class: 'rv-h' }, '댓글'), cList, h('div', { class: 'rv-c' }, h('span', { class: 'rv-av' }, 'U'), cIn),
     drop, gal,
     h('div', { class: 'between' }, h('h3', { class: 'rv-h' }, '본문'), pvBtn), ta, pv,
