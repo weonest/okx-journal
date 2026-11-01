@@ -3,7 +3,8 @@
 import { h, icon, fmtNum, fmtTs, fmtDur, fmtPct, cls, KST } from './dom.js';
 import { S, reviewOf, saveReview, deleteReview } from './store.js';
 import { REVIEW_FIELDS, parseTags, leverageOf, roeOf, mockTrade } from '../core/review.js';
-import { renderBody, journalForTrade } from './journal.js';
+import { renderMarkdown, journalForTrade } from './journal.js';
+import { toggleCheck } from '../core/markdown.js';
 import { imageSrc, forgetImage, cloudBadge } from './cloud.js';
 import { kvPut } from './store.js';
 
@@ -171,14 +172,24 @@ export function openReview(tradeId) {
   drop.ondrop = (e) => { e.preventDefault(); drop.classList.remove('on'); addFiles(e.dataTransfer.files); };
 
   // 본문(마크다운 일부: #, -, [ ])
-  const ta = h('textarea', { class: 'rv-body', placeholder: '## 복기 메모\n- 진입 이유\n- 잘한 점 / 아쉬운 점\n[ ] 다음에 할 일' });
+  const ta = h('textarea', { class: 'rv-body', placeholder: '## 복기 메모\n- **진입 이유**: \n- 잘한 점 / 아쉬운 점\n> 다음엔 손절선을 먼저 정한다\n- [ ] 다음에 할 일' });
   ta.value = r.body;
   const fit = () => { ta.style.height = 'auto'; ta.style.height = ta.scrollHeight + 'px'; };
   let timer = null;
   ta.oninput = () => { fit(); clearTimeout(timer); timer = setTimeout(() => save({ body: ta.value }), 600); };
   ta.onblur = () => { clearTimeout(timer); if (ta.value !== r.body) save({ body: ta.value }); };
-  const pv = h('div', { class: 'jbody', hidden: true });
-  const pvBtn = h('button', { class: 'sub small', onclick: () => { const on = pv.hidden; pv.hidden = !on; ta.hidden = on; if (on) pv.replaceChildren(...renderBody(ta.value.split('\n').filter((l) => l.trim()))); else fit(); pvBtn.textContent = on ? '편집' : '미리보기'; } }, '미리보기');
+  // 노션처럼: 내용이 있으면 서식 적용 화면, 누르면 편집, 다른 곳을 누르면 다시 서식 화면
+  const pv = h('div', { class: 'jbody md rv-md', title: '눌러서 편집' });
+  const showPreview = () => {
+    if (!ta.value.trim()) { pv.hidden = true; ta.hidden = false; return; }
+    pv.replaceChildren(...renderMarkdown(ta.value, (line) => { ta.value = toggleCheck(ta.value, line); save({ body: ta.value }); showPreview(); }));
+    pv.hidden = false; ta.hidden = true;
+  };
+  const edit = () => { pv.hidden = true; ta.hidden = false; fit(); ta.focus(); };
+  pv.onclick = (e) => { if (!e.target.closest('a, .chk')) edit(); };
+  ta.addEventListener('blur', () => setTimeout(showPreview, 0));
+  const pvBtn = h('button', { class: 'sub small', title: '마크다운: # 제목, **굵게**, *기울임*, ~~취소~~, `코드`, - 목록, 1. 번호, - [ ] 체크, > 인용, ``` 코드 블록, --- 구분선, | 표 |', onmousedown: (e) => e.preventDefault(), onclick: () => (ta.hidden ? edit() : ta.blur()) }, '편집 / 보기'); // mousedown: 입력칸 포커스를 뺏지 않게
+  requestAnimationFrame(showPreview);
 
   const page = h('div', { class: 'rv-page', role: 'dialog', 'aria-modal': 'true' },
     h('div', { class: 'between rv-top' }, h('span', { class: 'mute small' }, '세션 상세 목록 / ' + (t.mock ? '모의 매매' : t.instId)),
@@ -189,7 +200,7 @@ export function openReview(tradeId) {
     t.mock ? null : [h('h3', { class: 'rv-h' }, `체결 ${ex.length}건`), h('div', { class: 'mute small' }, '포지션이 0에서 열려 0으로 닫힐 때까지를 거래 1건으로 묶고, 그 안의 분할 진입·청산을 체결로 보여줍니다.'), execTbl],
     h('h3', { class: 'rv-h' }, '댓글'), cList, h('div', { class: 'rv-c' }, h('span', { class: 'rv-av' }, 'U'), cIn),
     drop, gal,
-    h('div', { class: 'between' }, h('h3', { class: 'rv-h' }, '본문'), pvBtn), ta, pv,
+    h('div', { class: 'between' }, h('h3', { class: 'rv-h' }, '본문 ', h('span', { class: 'mute small' }, '마크다운 지원')), pvBtn), ta, pv,
     journalForTrade(t.id),
     h('div', { class: 'mute small rv-foot' }, (S.sample ? '예시 데이터: 이 복기는 저장되지 않습니다. ' : '자동 저장됩니다. ') + (r.updatedAt ? '마지막 저장 ' + fmtTs(r.updatedAt) + ' ' : ''), S.sample ? null : cloudBadge()));
   page.onpaste = (e) => { if (e.clipboardData?.files?.length) { e.preventDefault(); addFiles(e.clipboardData.files); } };
